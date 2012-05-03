@@ -27,7 +27,6 @@ namespace reWZ
 
         private static byte[] GenerateKey(byte[] iv, byte[] aesKey)
         {
-            //byte[] wzKey = new byte[0x10000];
             MemoryStream memStream = new MemoryStream(0x10000);
             CryptoStream cStream = new CryptoStream(memStream, new AesManaged {KeySize = 256, Key = aesKey, Mode = CipherMode.ECB}.CreateEncryptor(), CryptoStreamMode.Write);
             try {

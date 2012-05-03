@@ -8,12 +8,13 @@ namespace reWZ
 {
     public class WZFile : IDisposable
     {
-        private readonly WZAES _aes;
-        private readonly bool _encrypted;
+        internal readonly WZAES _aes;
+        internal readonly bool _encrypted;
         private readonly MemoryMappedFile _file;
         private readonly WZBinaryReader _r;
         private readonly WZVariant _variant;
-        private uint _fstart;
+        private WZDirectory _maindir;
+        internal uint _fstart;
 
         public WZFile(string path, WZVariant variant, bool encrypted) : this(MemoryMappedFile.CreateFromFile(path, FileMode.Open), variant, encrypted)
         {}
@@ -26,11 +27,6 @@ namespace reWZ
             _aes = new WZAES(_variant);
             _r = new WZBinaryReader(_file.CreateViewStream(), _aes, 0);
             Parse();
-        }
-
-        internal uint FileStart
-        {
-            get { return _fstart; }
         }
 
         public void Dispose()
@@ -46,6 +42,7 @@ namespace reWZ
             _fstart = _r.ReadUInt32();
             _r.ReadASCIIZString();
             GuessVersion();
+            _maindir = new WZDirectory("", null, this, _r, _fstart + 2);
         }
 
         private void GuessVersion()
@@ -74,7 +71,7 @@ namespace reWZ
                         _r.ReadWZString();
                         break;
                     default:
-                        Die(String.Format("Unknown object type in WzDirectory."));
+                        Die("Unknown object type in WzDirectory.");
                         break;
                 }
 
@@ -109,7 +106,17 @@ namespace reWZ
             _r.Jump(_fstart);
         }
 
-        private static void Die(string cause)
+        internal Stream GetSubstream(long offset, long length)
+        {
+            return _file.CreateViewStream(offset, length);
+        }
+
+        internal static T Die<T>(string cause)
+        {
+            throw new WZException(cause);
+        }
+
+        internal static void Die(string cause)
         {
             throw new WZException(cause);
         }

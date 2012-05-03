@@ -44,6 +44,17 @@ namespace reWZ
         }
 
         /// <summary>
+        ///   Executes a delegate of type <see cref="System.Action" /> , then sets the position of the backing stream back to the original value.
+        /// </summary>
+        /// <param name="result"> The delegate to execute. </param>
+        public void PeekFor(Action result)
+        {
+            long orig = BaseStream.Position;
+            result();
+            BaseStream.Position = orig;
+        }
+
+        /// <summary>
         ///   Executes a delegate of type <see cref="System.Func{TResult}" /> , then sets the position of the backing stream back to the original value.
         /// </summary>
         /// <typeparam name="T"> The return type of the delegate. </typeparam>
@@ -115,6 +126,22 @@ namespace reWZ
             while ((b = ReadByte()) != 0)
                 sb.Append((char)b);
             return sb.ToString();
+        }
+
+        public string ReadWZStringBlock(bool encrypted)
+        {
+            switch (ReadByte())
+            {
+                case 0:
+                case 0x73:
+                    return ReadWZString(encrypted);
+                case 1:
+                case 0x1B:
+                    return ReadWZStringAtOffset(ReadInt32(), encrypted);
+                default:
+                    WZFile.Die("Unknown string type in string block!");
+                    return "MISSINGNO."; // should never get here unless it fails to throw an exception.
+            }
         }
 
         /// <summary>

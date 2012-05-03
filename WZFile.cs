@@ -33,15 +33,11 @@ namespace reWZ
             get { return _fstart; }
         }
 
-        #region IDisposable Members
-
         public void Dispose()
         {
             _r.Dispose();
             _file.Dispose();
         }
-
-        #endregion
 
         private void Parse()
         {

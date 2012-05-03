@@ -19,7 +19,7 @@ namespace reWZ
                 case 1:
                     return GenerateKey(GMSIV, AESKey);
                 case 2:
-                    return new byte[UInt16.MaxValue];
+                    return new byte[0x10000];
                 default:
                     throw new ArgumentException("Invalid WZ variant passed.", "version");
             }
@@ -41,7 +41,6 @@ namespace reWZ
                 cStream.Dispose();
                 memStream.Dispose();
             }
-           
         }
     }
 

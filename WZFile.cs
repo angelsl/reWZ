@@ -1,23 +1,19 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Linq;
-using System.Text;
 
 namespace reWZ
 {
     public class WZFile : IDisposable
     {
+        private readonly WZAES _aes;
+        private readonly bool _encrypted;
         private readonly MemoryMappedFile _file;
         private readonly WZBinaryReader _r;
         private readonly WZVariant _variant;
-        private readonly WZAES _aes;
-        private readonly bool _encrypted;
         private uint _fstart;
-
-        internal uint FileStart { get { return _fstart; } }
 
         public WZFile(string path, WZVariant variant, bool encrypted) : this(MemoryMappedFile.CreateFromFile(path, FileMode.Open), variant, encrypted)
         {}
@@ -32,9 +28,24 @@ namespace reWZ
             Parse();
         }
 
+        internal uint FileStart
+        {
+            get { return _fstart; }
+        }
+
+        #region IDisposable Members
+
+        public void Dispose()
+        {
+            _r.Dispose();
+            _file.Dispose();
+        }
+
+        #endregion
+
         private void Parse()
         {
-            if(_r.ReadASCIIString(4) != "PKG1") Die("WZ file has invalid header; file does not have magic \"PKG1\".");
+            if (_r.ReadASCIIString(4) != "PKG1") Die("WZ file has invalid header; file does not have magic \"PKG1\".");
             _r.Skip(8);
             _fstart = _r.ReadUInt32();
             _r.ReadASCIIZString();
@@ -49,9 +60,9 @@ namespace reWZ
             if (count == 0) Die("WZ file has no entries!");
             long offset = 0;
             bool success = false;
-            for(int i = 0; i < count; i++) {
+            for (int i = 0; i < count; i++) {
                 byte type = _r.ReadByte();
-                switch(type) {
+                switch (type) {
                     case 1:
                         _r.Skip(10);
                         continue;
@@ -70,7 +81,7 @@ namespace reWZ
                         Die(String.Format("Unknown object type in WzDirectory."));
                         break;
                 }
-                
+
                 _r.ReadWZInt();
                 _r.ReadWZInt();
                 offset = _r.BaseStream.Position;
@@ -80,10 +91,10 @@ namespace reWZ
                     break;
                 }
             }
-            if(!success) Die("WZ file has no images!");
+            if (!success) Die("WZ file has no images!");
             success = false;
             uint vHash;
-            for(ushort v = 0; v < ushort.MaxValue; v++) {
+            for (ushort v = 0; v < ushort.MaxValue; v++) {
                 vHash = v.ToString(CultureInfo.InvariantCulture).Aggregate<char, uint>(0, (current, t) => (32*current) + t + 1);
                 if ((0xFF ^ (vHash >> 24) ^ (vHash << 8 >> 24) ^ (vHash << 16 >> 24) ^ (vHash << 24 >> 24)) != ver) continue;
                 _r.Jump(offset);
@@ -98,14 +109,8 @@ namespace reWZ
                     success = false;
                 }
             }
-            if(!success) Die("Failed to guess WZ file version!");
+            if (!success) Die("Failed to guess WZ file version!");
             _r.Jump(_fstart);
-        }
-
-        public void Dispose()
-        {
-            _r.Dispose();
-            _file.Dispose();
         }
 
         private static void Die(string cause)

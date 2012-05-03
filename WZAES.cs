@@ -12,15 +12,42 @@ namespace reWZ
         private static readonly byte[] KMSIV = {0xB9, 0x7D, 0x63, 0xE9, 0xB9, 0x7D, 0x63, 0xE9, 0xB9, 0x7D, 0x63, 0xE9, 0xB9, 0x7D, 0x63, 0xE9};
         internal static readonly uint OffsetKey = 0x581C3F6D;
 
+        private readonly byte[] _asciiEncKey;
+        private readonly byte[] _asciiKey;
+        private readonly ushort[] _unicodeEncKey;
+        private readonly ushort[] _unicodeKey;
+        private readonly byte[] _wzKey;
+
+        public WZAES(WZVariant version)
+        {
+            _wzKey = GetWZKey(version);
+            _asciiKey = new byte[_wzKey.Length];
+            _unicodeKey = new ushort[_wzKey.Length/2];
+            _asciiEncKey = new byte[_wzKey.Length];
+            _unicodeEncKey = new ushort[_wzKey.Length/2];
+            unchecked {
+                byte mask = 0xAA;
+                for (int i = 0; i < _wzKey.Length; ++i, ++mask) {
+                    _asciiKey[i] = mask;
+                    _asciiEncKey[i] = (byte)(_wzKey[i] ^ mask);
+                }
+                ushort umask = 0XAAAA;
+                for (int i = 0; i < _wzKey.Length/2; i += 2, ++umask) {
+                    _unicodeKey[i] = umask;
+                    _unicodeEncKey[i] = (ushort)(((_wzKey[i + 1] << 8) | _wzKey[i]) ^ umask);
+                }
+            }
+        }
+
         private static byte[] GetWZKey(WZVariant version)
         {
-            switch((int)version) {
+            switch ((int)version) {
                 case 0:
                     return GenerateKey(KMSIV, AESKey);
                 case 1:
                     return GenerateKey(GMSIV, AESKey);
                 case 2:
-                    return new byte[UInt16.MaxValue];
+                    return new byte[0x10000];
                 default:
                     throw new ArgumentException("Invalid WZ variant passed.", "version");
             }
@@ -36,45 +63,15 @@ namespace reWZ
                     cStream.Write(memStream.GetBuffer(), i, 16);
                 cStream.Flush();
                 return memStream.ToArray();
-            }
-            finally
-            {
+            } finally {
                 cStream.Dispose();
                 memStream.Dispose();
-            }
-           
-        }
-
-        private readonly byte[] _wzKey;
-        private readonly byte[] _asciiKey;
-        private readonly ushort[] _unicodeKey;
-        private readonly byte[] _asciiEncKey;
-        private readonly ushort[] _unicodeEncKey;
-
-        public WZAES(WZVariant version)
-        {
-            _wzKey = GetWZKey(version);
-            _asciiKey = new byte[_wzKey.Length];
-            _unicodeKey = new ushort[_wzKey.Length / 2];
-            _asciiEncKey = new byte[_wzKey.Length];
-            _unicodeEncKey = new ushort[_wzKey.Length / 2];
-            unchecked {
-                byte mask = 0xAA;
-                for (int i = 0; i < _wzKey.Length; ++i, ++mask) {
-                    _asciiKey[i] = mask;
-                    _asciiEncKey[i] = (byte) (_wzKey[i] ^ mask);
-                }
-                ushort umask = 0XAAAA;
-                for(int i = 0; i < _wzKey.Length/2; i+=2, ++umask) {
-                    _unicodeKey[i] = umask;
-                    _unicodeEncKey[i] = (ushort)(((_wzKey[i + 1] << 8) | _wzKey[i]) ^ umask);
-                }
             }
         }
 
         public string DecryptASCIIString(byte[] asciiBytes, bool encrypted = true)
         {
-            if(asciiBytes.Length > _asciiEncKey.Length)
+            if (asciiBytes.Length > _asciiEncKey.Length)
                 throw new NotSupportedException(String.Format("Cannot decrypt ASCII string longer than {0} characters. Please report this!", _asciiEncKey.Length));
             StringBuilder ret = new StringBuilder(asciiBytes.Length);
             byte[] key = encrypted ? _asciiEncKey : _asciiKey;
@@ -103,8 +100,16 @@ namespace reWZ
 
     public enum WZVariant
     {
-        MSEA = 0, KMS = 0, KMST = 0, JMS = 0, JMST = 0, EMS = 0,
-        GMS = 1, GMST = 1, TMS = 1,
-        BMS = 2, Classic = 2
+        MSEA = 0,
+        KMS = 0,
+        KMST = 0,
+        JMS = 0,
+        JMST = 0,
+        EMS = 0,
+        GMS = 1,
+        GMST = 1,
+        TMS = 1,
+        BMS = 2,
+        Classic = 2
     }
 }

@@ -16,6 +16,9 @@
 using System;
 using System.Globalization;
 using System.IO;
+#if MMAP
+using System.IO.MemoryMappedFiles;
+#endif
 using System.Linq;
 
 namespace reWZ
@@ -23,10 +26,13 @@ namespace reWZ
     public class WZFile : IDisposable
     {
         internal readonly WZAES _aes;
-        private readonly BufferedStream _buffer;
         internal readonly bool _encrypted;
         internal readonly bool _parseAll;
+#if MMAP
+        private readonly MemoryMappedFile _file;
+#else
         private readonly Stream _file;
+#endif
         private readonly WZBinaryReader _r;
         private readonly WZVariant _variant;
         private bool _disposed;
@@ -40,9 +46,25 @@ namespace reWZ
         /// <param name="variant"> The variant of this WZ file. </param>
         /// <param name="encrypted"> Whether the WZ file is encrypted outside a WZ image. </param>
         /// <param name="parseAll"> Whether to parse the WZ file completely, or on demand. </param>
-        public WZFile(string path, WZVariant variant, bool encrypted, bool parseAll = false) : this(File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read), variant, encrypted, parseAll)
+        public WZFile(string path, WZVariant variant, bool encrypted, bool parseAll = false) 
+#if MMAP
+            : this(MemoryMappedFile.CreateFromFile(path, FileMode.Open), variant, encrypted, parseAll)                       
+#else
+            : this(File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read), variant, encrypted, parseAll)
+#endif
         {}
 
+
+#if MMAP
+        /// <summary>
+        ///   Creates and loads a WZ file.
+        /// </summary>
+        /// <param name="input"> The memory-mapped file containing the WZ file. </param>
+        /// <param name="variant"> The variant of this WZ file. </param>
+        /// <param name="encrypted"> Whether the WZ file is encrypted outside a WZ image. </param>
+        /// <param name="parseAll"> Whether to parse the WZ file completely, or on demand. </param>
+        public WZFile(MemoryMappedFile input, WZVariant variant, bool encrypted, bool parseAll = false)
+#else
         /// <summary>
         ///   Creates and loads a WZ file.
         /// </summary>
@@ -51,13 +73,18 @@ namespace reWZ
         /// <param name="encrypted"> Whether the WZ file is encrypted outside a WZ image. </param>
         /// <param name="parseAll"> Whether to parse the WZ file completely, or on demand. </param>
         public WZFile(Stream input, WZVariant variant, bool encrypted, bool parseAll = false)
+#endif
         {
             _file = input;
             _variant = variant;
             _encrypted = encrypted;
             _parseAll = parseAll;
             _aes = new WZAES(_variant);
+#if MMAP
+            _r = new WZBinaryReader(_file.CreateViewStream(), _aes, 0);
+#else
             _r = new WZBinaryReader(_file, _aes, 0);
+#endif
             Parse();
         }
 
@@ -169,7 +196,11 @@ namespace reWZ
 
         internal Stream GetSubstream(long offset, long length)
         {
+#if MMAP
+            return _file.CreateViewStream(offset, length);
+#else
             return new Substream(_file, offset, length);
+#endif
         }
 
         internal static T Die<T>(string cause)

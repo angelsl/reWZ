@@ -15,6 +15,7 @@
 
 using System;
 using System.Drawing;
+using System.Linq;
 
 namespace reWZ.WZProperties
 {
@@ -23,28 +24,28 @@ namespace reWZ.WZProperties
 
     public class WZNullProperty : WZProperty<WZNothing>
     {
-        internal WZNullProperty(string name, WZObject parent, WZImage container) : base(name, parent, default(WZNothing), container)
+        internal WZNullProperty(string name, WZObject parent, WZImage container) : base(name, parent, default(WZNothing), container, false)
         {}
     }
 
     public class WZUInt16Property : WZProperty<ushort>
     {
         internal WZUInt16Property(string name, WZObject parent, WZBinaryReader reader, WZImage container)
-            : base(name, parent, reader.ReadUInt16(), container)
+            : base(name, parent, reader.ReadUInt16(), container, false)
         {}
     }
 
     public class WZInt32Property : WZProperty<int>
     {
         internal WZInt32Property(string name, WZObject parent, WZBinaryReader reader, WZImage container)
-            : base(name, parent, reader.ReadWZInt(), container)
+            : base(name, parent, reader.ReadWZInt(), container, false)
         {}
     }
 
     public class WZSingleProperty : WZProperty<Single>
     {
         internal WZSingleProperty(string name, WZObject parent, WZBinaryReader reader, WZImage container)
-            : base(name, parent, ReadSingle(reader), container)
+            : base(name, parent, ReadSingle(reader), container, false)
         {}
 
         private static Single ReadSingle(WZBinaryReader reader)
@@ -57,28 +58,41 @@ namespace reWZ.WZProperties
     public class WZDoubleProperty : WZProperty<Double>
     {
         internal WZDoubleProperty(string name, WZObject parent, WZBinaryReader reader, WZImage container)
-            : base(name, parent, reader.ReadDouble(), container)
+            : base(name, parent, reader.ReadDouble(), container, false)
         {}
     }
 
     public class WZStringProperty : WZProperty<String>
     {
         internal WZStringProperty(string name, WZObject parent, WZBinaryReader reader, WZImage container)
-            : base(name, parent, reader.ReadWZStringBlock(container.File._encrypted), container)
+            : base(name, parent, reader.ReadWZStringBlock(container.File._encrypted), container, false)
         {}
     }
 
     public class WZVectorProperty : WZProperty<Point>
     {
         internal WZVectorProperty(string name, WZObject parent, WZBinaryReader wzbr, WZImage container)
-            : base(name, parent, new Point(wzbr.ReadWZInt(), wzbr.ReadWZInt()), container)
+            : base(name, parent, new Point(wzbr.ReadWZInt(), wzbr.ReadWZInt()), container, false)
         {}
     }
 
     public class WZUOLProperty : WZProperty<String>
     {
         internal WZUOLProperty(string name, WZObject parent, WZBinaryReader reader, WZImage container)
-            : base(name, parent, reader.ReadWZStringBlock(container._encrypted), container)
+            : base(name, parent, reader.ReadWZStringBlock(container._encrypted), container, false)
         {}
+
+        public WZObject Resolve()
+        {
+            return Value.Split('/').Where(node => node != ".").Aggregate(Parent, (current, node) => node == ".." ? current.Parent : current[node]);
+        }
+
+        public WZObject ResolveFully()
+        {
+            WZObject ret = this;
+            while (ret is WZUOLProperty)
+                ret = ((WZUOLProperty)ret).Resolve();
+            return ret;
+        }
     }
 }

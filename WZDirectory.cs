@@ -15,9 +15,9 @@
 
 namespace reWZ
 {
-    public class WZDirectory : WZChildContainer
+    public class WZDirectory : WZObject
     {
-        internal WZDirectory(string name, WZObject parent, WZFile file, WZBinaryReader wzbr, long offset) : base(name, parent, file)
+        internal WZDirectory(string name, WZObject parent, WZFile file, WZBinaryReader wzbr, long offset) : base(name, parent, file, true)
         {
             Parse(wzbr, offset);
         }

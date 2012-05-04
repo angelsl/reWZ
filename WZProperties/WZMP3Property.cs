@@ -17,7 +17,7 @@ namespace reWZ.WZProperties
 {
     public class WZMP3Property : WZProperty<byte[]>
     {
-        internal WZMP3Property(string name, WZObject parent, WZBinaryReader r, WZImage container) : base(name, parent, r, container)
+        internal WZMP3Property(string name, WZObject parent, WZBinaryReader r, WZImage container) : base(name, parent, r, container, false)
         {}
 
         internal override byte[] Parse(WZBinaryReader r, bool initial)

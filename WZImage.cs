@@ -15,15 +15,16 @@
 
 namespace reWZ
 {
-    public sealed class WZImage : WZChildContainer
+    public sealed class WZImage : WZObject
     {
         private readonly WZBinaryReader _r;
         internal bool _encrypted;
         private bool _parsed;
 
-        internal WZImage(string name, WZObject parent, WZFile file, WZBinaryReader reader) : base(name, parent, file)
+        internal WZImage(string name, WZObject parent, WZFile file, WZBinaryReader reader) : base(name, parent, file, true)
         {
             _r = reader;
+            if (file._parseAll) Parse();
         }
 
         /// <summary>

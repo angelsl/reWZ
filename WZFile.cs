@@ -25,6 +25,7 @@ namespace reWZ
         internal readonly WZAES _aes;
         private readonly BufferedStream _buffer;
         internal readonly bool _encrypted;
+        internal readonly bool _parseAll;
         private readonly Stream _file;
         private readonly WZBinaryReader _r;
         private readonly WZVariant _variant;
@@ -38,7 +39,8 @@ namespace reWZ
         /// <param name="path"> The path where the WZ file is located. </param>
         /// <param name="variant"> The variant of this WZ file. </param>
         /// <param name="encrypted"> Whether the WZ file is encrypted outside a WZ image. </param>
-        public WZFile(string path, WZVariant variant, bool encrypted) : this(File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read), variant, encrypted)
+        /// <param name="parseAll"> Whether to parse the WZ file completely, or on demand. </param>
+        public WZFile(string path, WZVariant variant, bool encrypted, bool parseAll = false) : this(File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read), variant, encrypted, parseAll)
         {}
 
         /// <summary>
@@ -47,11 +49,13 @@ namespace reWZ
         /// <param name="input"> The stream containing the WZ file. </param>
         /// <param name="variant"> The variant of this WZ file. </param>
         /// <param name="encrypted"> Whether the WZ file is encrypted outside a WZ image. </param>
-        public WZFile(Stream input, WZVariant variant, bool encrypted)
+        /// <param name="parseAll"> Whether to parse the WZ file completely, or on demand. </param>
+        public WZFile(Stream input, WZVariant variant, bool encrypted, bool parseAll = false)
         {
             _file = input;
             _variant = variant;
             _encrypted = encrypted;
+            _parseAll = parseAll;
             _aes = new WZAES(_variant);
             _r = new WZBinaryReader(_file, _aes, 0);
             Parse();

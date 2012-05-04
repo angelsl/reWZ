@@ -91,7 +91,7 @@ namespace reWZ
             return ret.ToString();
         }
 
-        public void DecryptBytes(byte[] bytes)
+        public void DecryptBytes(ref byte[] bytes)
         {
             for (int i = 0; i < bytes.Length; ++i)
                 bytes[i] ^= _wzKey[i];

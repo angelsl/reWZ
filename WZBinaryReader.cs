@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 
@@ -160,6 +161,110 @@ namespace reWZ
                 uint ret = ((((uint)BaseStream.Position - fstart) ^ 0xFFFFFFFF)*_versionHash) - WZAES.OffsetKey;
                 return (((ret << (int)ret) | (ret >> (int)(32 - ret))) ^ ReadUInt32()) + (fstart*2);
             }
+        }
+    }
+
+    internal class Substream : Stream
+    {
+        private readonly long _origin, _length, _end; // end is exclusive
+        private long _posInBacking;
+        private readonly Stream _backing;
+
+        public Substream(Stream backing, long start, long length)
+        {
+            if(!backing.CanSeek) throw new ArgumentException("A Substream's backing stream must be seekable!", "backing");
+            if (start >= backing.Length) throw new ArgumentOutOfRangeException("start", "The Substream falls outside the backing stream!");
+            _backing = backing;
+            _origin = start;
+            _length = length;
+            _end = start + length;
+            if (_end > backing.Length) throw new ArgumentOutOfRangeException("length", "The Substream falls outside the backing stream!");
+        }
+
+        public override void Flush()
+        {
+        }
+
+        public override long Seek(long offset, SeekOrigin origin)
+        {
+            long tPos;
+            switch(origin) {
+                case SeekOrigin.Begin:
+                    tPos = _origin + offset;
+                    break;
+                case SeekOrigin.Current:
+                    tPos = _posInBacking + offset;
+                    break;
+                case SeekOrigin.End:
+                    tPos = _end + offset;
+                    break;
+                default:
+                    throw new ArgumentException("Invalid SeekOrigin specified.", "origin");
+            }
+
+            if (tPos >= _end || tPos < _origin) throw new ArgumentOutOfRangeException("offset", "You cannot seek out of the substream!");
+            return (_posInBacking = tPos);
+        }
+
+        public override void SetLength(long value)
+        {
+            throw new NotSupportedException("A Substream cannot be resized.");
+        }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            long origPos = _backing.Position;
+            _backing.Position = _posInBacking;
+            count = (int)Math.Min(count, _end - _posInBacking);
+            if (count == 0) return 0;
+            count = _backing.Read(buffer, offset, count);
+            Debug.Assert((_posInBacking + count) == _backing.Position);
+            _posInBacking = _backing.Position;
+            _backing.Position = origPos;
+            return count;
+        }
+
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            throw new NotSupportedException("A Substream is not writable.");
+        }
+
+        public override int ReadByte()
+        {
+            if (_posInBacking >= _end) return -1;
+            long origPos = _backing.Position;
+            _backing.Position = _posInBacking;
+            int r = _backing.ReadByte();
+            ++_posInBacking;
+            Debug.Assert(_posInBacking == _backing.Position);
+            _backing.Position = origPos;
+            return r;
+        }
+
+        public override bool CanRead
+        {
+            get { return true; }
+        }
+
+        public override bool CanSeek
+        {
+            get { return true; }
+        }
+
+        public override bool CanWrite
+        {
+            get { return false; }
+        }
+
+        public override long Length
+        {
+            get { return _length; }
+        }
+
+        public override long Position
+        {
+            get { return _posInBacking - _origin; }
+            set { _posInBacking = value + _origin; }
         }
     }
 }

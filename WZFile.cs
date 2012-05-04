@@ -10,22 +10,22 @@ namespace reWZ
     {
         internal readonly WZAES _aes;
         internal readonly bool _encrypted;
-        private readonly MemoryMappedFile _file;
+        private readonly Stream _file;
         private readonly WZBinaryReader _r;
         private readonly WZVariant _variant;
         private WZDirectory _maindir;
         internal uint _fstart;
 
-        public WZFile(string path, WZVariant variant, bool encrypted) : this(MemoryMappedFile.CreateFromFile(path, FileMode.Open), variant, encrypted)
+        public WZFile(string path, WZVariant variant, bool encrypted) : this(File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read), variant, encrypted)
         {}
 
-        public WZFile(MemoryMappedFile input, WZVariant variant, bool encrypted)
+        public WZFile(Stream input, WZVariant variant, bool encrypted)
         {
             _file = input;
             _variant = variant;
             _encrypted = encrypted;
             _aes = new WZAES(_variant);
-            _r = new WZBinaryReader(_file.CreateViewStream(), _aes, 0);
+            _r = new WZBinaryReader(_file, _aes, 0);
             Parse();
         }
 
@@ -37,12 +37,14 @@ namespace reWZ
 
         private void Parse()
         {
-            if (_r.ReadASCIIString(4) != "PKG1") Die("WZ file has invalid header; file does not have magic \"PKG1\".");
-            _r.Skip(8);
-            _fstart = _r.ReadUInt32();
-            _r.ReadASCIIZString();
-            GuessVersion();
-            _maindir = new WZDirectory("", null, this, _r, _fstart + 2);
+            lock (this) {
+                if (_r.ReadASCIIString(4) != "PKG1") Die("WZ file has invalid header; file does not have magic \"PKG1\".");
+                _r.Skip(8);
+                _fstart = _r.ReadUInt32();
+                _r.ReadASCIIZString();
+                GuessVersion();
+                _maindir = new WZDirectory("", null, this, _r, _fstart + 2);
+            }
         }
 
         private void GuessVersion()
@@ -108,7 +110,7 @@ namespace reWZ
 
         internal Stream GetSubstream(long offset, long length)
         {
-            return _file.CreateViewStream(offset, length);
+            return new Substream(_file, offset, length);
         }
 
         internal static T Die<T>(string cause)

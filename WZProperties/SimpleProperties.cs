@@ -1,39 +1,51 @@
-﻿using System;
-using System.Collections.Generic;
+﻿// This file is part of reWZ.
+// 
+// reWZ is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// reWZ is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with reWZ. If not, see <http://www.gnu.org/licenses/>.
+
+using System;
 using System.Drawing;
-using System.Linq;
-using System.Text;
 
 namespace reWZ.WZProperties
 {
-    public struct WZNothing {}
+    public struct WZNothing
+    {}
 
     public class WZNullProperty : WZProperty<WZNothing>
     {
-        public WZNullProperty(string name, WZObject parent, WZImage container) : base(name, parent, default(WZNothing), container)
+        internal WZNullProperty(string name, WZObject parent, WZImage container) : base(name, parent, default(WZNothing), container)
         {}
     }
 
     public class WZUInt16Property : WZProperty<ushort>
     {
-        public WZUInt16Property(string name, WZObject parent, WZBinaryReader reader, WZImage container)
+        internal WZUInt16Property(string name, WZObject parent, WZBinaryReader reader, WZImage container)
             : base(name, parent, reader.ReadUInt16(), container)
-        {} 
+        {}
     }
 
     public class WZInt32Property : WZProperty<int>
     {
-        public WZInt32Property(string name, WZObject parent, WZBinaryReader reader, WZImage container)
+        internal WZInt32Property(string name, WZObject parent, WZBinaryReader reader, WZImage container)
             : base(name, parent, reader.ReadWZInt(), container)
         {}
     }
 
     public class WZSingleProperty : WZProperty<Single>
     {
-        public WZSingleProperty(string name, WZObject parent, WZBinaryReader reader, WZImage container)
+        internal WZSingleProperty(string name, WZObject parent, WZBinaryReader reader, WZImage container)
             : base(name, parent, ReadSingle(reader), container)
-        {
-        }
+        {}
 
         private static Single ReadSingle(WZBinaryReader reader)
         {
@@ -44,29 +56,29 @@ namespace reWZ.WZProperties
 
     public class WZDoubleProperty : WZProperty<Double>
     {
-        public WZDoubleProperty(string name, WZObject parent, WZBinaryReader reader, WZImage container)
+        internal WZDoubleProperty(string name, WZObject parent, WZBinaryReader reader, WZImage container)
             : base(name, parent, reader.ReadDouble(), container)
         {}
     }
 
     public class WZStringProperty : WZProperty<String>
     {
-        public WZStringProperty(string name, WZObject parent, WZBinaryReader reader, WZImage container)
+        internal WZStringProperty(string name, WZObject parent, WZBinaryReader reader, WZImage container)
             : base(name, parent, reader.ReadWZStringBlock(container.File._encrypted), container)
         {}
     }
 
     public class WZVectorProperty : WZProperty<Point>
     {
-        public WZVectorProperty(string name, WZObject parent, WZBinaryReader wzbr, WZImage container)
+        internal WZVectorProperty(string name, WZObject parent, WZBinaryReader wzbr, WZImage container)
             : base(name, parent, new Point(wzbr.ReadWZInt(), wzbr.ReadWZInt()), container)
-        { }
+        {}
     }
 
-    /*public class WZUOLProperty : WZProperty<WZObject>
+    public class WZUOLProperty : WZProperty<String>
     {
-        public WZUOLProperty(string name, WZObject parent, WZBinaryReader reader, WZImage container)
-            : base(name, parent, null, container)
+        internal WZUOLProperty(string name, WZObject parent, WZBinaryReader reader, WZImage container)
+            : base(name, parent, reader.ReadWZStringBlock(container._encrypted), container)
         {}
-    }*/
+    }
 }

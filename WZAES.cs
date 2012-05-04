@@ -1,11 +1,26 @@
-﻿using System;
+﻿// This file is part of reWZ.
+// 
+// reWZ is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// reWZ is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with reWZ. If not, see <http://www.gnu.org/licenses/>.
+
+using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 
 namespace reWZ
 {
-    public class WZAES
+    internal class WZAES
     {
         private static readonly byte[] AESKey = {0x13, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0xB4, 0x00, 0x00, 0x00, 0x1B, 0x00, 0x00, 0x00, 0x0F, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00, 0x00, 0x52, 0x00, 0x00, 0x00};
         private static readonly byte[] GMSIV = {0x4D, 0x23, 0xC7, 0x2B, 0x4D, 0x23, 0xC7, 0x2B, 0x4D, 0x23, 0xC7, 0x2B, 0x4D, 0x23, 0xC7, 0x2B};
@@ -18,7 +33,7 @@ namespace reWZ
         private readonly ushort[] _unicodeKey;
         private readonly byte[] _wzKey;
 
-        public WZAES(WZVariant version)
+        internal WZAES(WZVariant version)
         {
             _wzKey = GetWZKey(version);
             _asciiKey = new byte[_wzKey.Length];
@@ -69,7 +84,7 @@ namespace reWZ
             }
         }
 
-        public string DecryptASCIIString(byte[] asciiBytes, bool encrypted = true)
+        internal string DecryptASCIIString(byte[] asciiBytes, bool encrypted = true)
         {
             if (asciiBytes.Length > _asciiEncKey.Length)
                 throw new NotSupportedException(String.Format("Cannot decrypt ASCII string longer than {0} characters. Please report this!", _asciiEncKey.Length));
@@ -80,7 +95,7 @@ namespace reWZ
             return ret.ToString();
         }
 
-        public string DecryptUnicodeString(ushort[] ushortChars, bool encrypted = true)
+        internal string DecryptUnicodeString(ushort[] ushortChars, bool encrypted = true)
         {
             if (ushortChars.Length > _unicodeEncKey.Length)
                 throw new NotSupportedException(String.Format("Cannot decrypt UTF-16 string longer than {0} characters. Please report this!", _unicodeEncKey.Length));
@@ -91,7 +106,7 @@ namespace reWZ
             return ret.ToString();
         }
 
-        public void DecryptBytes(ref byte[] bytes)
+        internal void DecryptBytes(ref byte[] bytes)
         {
             for (int i = 0; i < bytes.Length; ++i)
                 bytes[i] ^= _wzKey[i];

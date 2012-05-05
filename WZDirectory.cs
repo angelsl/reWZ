@@ -27,8 +27,12 @@
 // If you modify this library, you may extend this exception to your version
 // of the library, but you are not obligated to do so. If you do not wish to
 // do so, delete this exception statement from your version.
+
 namespace reWZ
 {
+    /// <summary>
+    /// A directory in a WZ file. This cannot be located inside an Image file.
+    /// </summary>
     public class WZDirectory : WZObject
     {
         internal WZDirectory(string name, WZObject parent, WZFile file, WZBinaryReader wzbr, long offset) : base(name, parent, file, true)

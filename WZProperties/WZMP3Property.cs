@@ -27,8 +27,12 @@
 // If you modify this library, you may extend this exception to your version
 // of the library, but you are not obligated to do so. If you do not wish to
 // do so, delete this exception statement from your version.
+
 namespace reWZ.WZProperties
 {
+    /// <summary>
+    /// A sound property.
+    /// </summary>
     public class WZMP3Property : WZProperty<byte[]>
     {
         internal WZMP3Property(string name, WZObject parent, WZBinaryReader r, WZImage container) : base(name, parent, r, container, false)

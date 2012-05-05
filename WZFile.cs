@@ -27,16 +27,20 @@
 // If you modify this library, you may extend this exception to your version
 // of the library, but you are not obligated to do so. If you do not wish to
 // do so, delete this exception statement from your version.
+
 using System;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 #if MMAP
 using System.IO.MemoryMappedFiles;
 #endif
-using System.Linq;
 
 namespace reWZ
 {
+    /// <summary>
+    /// A WZ file.
+    /// </summary>
     public class WZFile : IDisposable
     {
         internal readonly WZAES _aes;
@@ -60,7 +64,7 @@ namespace reWZ
         /// <param name="variant"> The variant of this WZ file. </param>
         /// <param name="encrypted"> Whether the WZ file is encrypted outside a WZ image. </param>
         /// <param name="parseAll"> Whether to parse the WZ file completely, or on demand. </param>
-        public WZFile(string path, WZVariant variant, bool encrypted, bool parseAll = false) 
+        public WZFile(string path, WZVariant variant, bool encrypted, bool parseAll = false)
 #if MMAP
             : this(MemoryMappedFile.CreateFromFile(path, FileMode.Open), variant, encrypted, parseAll)                       
 #else
@@ -68,15 +72,14 @@ namespace reWZ
 #endif
         {}
 
-
 #if MMAP
-        /// <summary>
-        ///   Creates and loads a WZ file.
-        /// </summary>
-        /// <param name="input"> The memory-mapped file containing the WZ file. </param>
-        /// <param name="variant"> The variant of this WZ file. </param>
-        /// <param name="encrypted"> Whether the WZ file is encrypted outside a WZ image. </param>
-        /// <param name="parseAll"> Whether to parse the WZ file completely, or on demand. </param>
+    /// <summary>
+    ///   Creates and loads a WZ file.
+    /// </summary>
+    /// <param name="input"> The memory-mapped file containing the WZ file. </param>
+    /// <param name="variant"> The variant of this WZ file. </param>
+    /// <param name="encrypted"> Whether the WZ file is encrypted outside a WZ image. </param>
+    /// <param name="parseAll"> Whether to parse the WZ file completely, or on demand. </param>
         public WZFile(MemoryMappedFile input, WZVariant variant, bool encrypted, bool parseAll = false)
 #else
         /// <summary>
@@ -102,6 +105,9 @@ namespace reWZ
             Parse();
         }
 
+        /// <summary>
+        /// The root directory of the WZ file.
+        /// </summary>
         public WZDirectory MainDirectory
         {
             get
@@ -118,7 +124,6 @@ namespace reWZ
         /// </summary>
         public void Dispose()
         {
-            _r.Dispose();
             _file.Dispose();
             _disposed = true;
         }

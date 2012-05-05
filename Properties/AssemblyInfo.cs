@@ -27,6 +27,7 @@
 // If you modify this library, you may extend this exception to your version
 // of the library, but you are not obligated to do so. If you do not wish to
 // do so, delete this exception statement from your version.
+
 using System.Reflection;
 using System.Runtime.InteropServices;
 
@@ -35,11 +36,11 @@ using System.Runtime.InteropServices;
 // associated with an assembly.
 
 [assembly: AssemblyTitle("reWZ")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("A library to read WZ files.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("angelsl")]
 [assembly: AssemblyProduct("reWZ")]
-[assembly: AssemblyCopyright("Copyright ©  2012")]
+[assembly: AssemblyCopyright("Copyright © angelsl 2012")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

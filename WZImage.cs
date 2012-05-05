@@ -27,8 +27,12 @@
 // If you modify this library, you may extend this exception to your version
 // of the library, but you are not obligated to do so. If you do not wish to
 // do so, delete this exception statement from your version.
+
 namespace reWZ
 {
+    /// <summary>
+    /// A WZ image in a WZ file.
+    /// </summary>
     public sealed class WZImage : WZObject
     {
         private readonly WZBinaryReader _r;

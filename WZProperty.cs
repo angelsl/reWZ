@@ -27,6 +27,7 @@
 // If you modify this library, you may extend this exception to your version
 // of the library, but you are not obligated to do so. If you do not wish to
 // do so, delete this exception statement from your version.
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -36,6 +37,10 @@ using reWZ.WZProperties;
 
 namespace reWZ
 {
+    /// <summary>
+    /// An abstract class representing a WZ property that contains a value of type <typeparamref name="T"/>.
+    /// </summary>
+    /// <typeparam name="T">The type that this property contains.</typeparam>
     public abstract class WZProperty<T> : WZObject
     {
         private readonly WZImage _image;
@@ -95,6 +100,9 @@ namespace reWZ
         }
     }
 
+    /// <summary>
+    /// An object in a WZ file.
+    /// </summary>
     public abstract class WZObject : IEnumerable<WZObject>, IDictionary<String, WZObject>
     {
         private readonly Dictionary<String, WZObject> _backing;
@@ -343,10 +351,6 @@ namespace reWZ
         ///   <paramref name="arrayIndex" />
         ///   to the end of the destination
         ///   <paramref name="array" />
-        ///   .-or-Type
-        ///   <paramref name="T" />
-        ///   cannot be cast automatically to the type of the destination
-        ///   <paramref name="array" />
         ///   .</exception>
         public void CopyTo(KeyValuePair<string, WZObject>[] array, int arrayIndex)
         {
@@ -390,6 +394,13 @@ namespace reWZ
 
         #region IEnumerable<WZObject> Members
 
+        /// <summary>
+        /// Returns an enumerator that iterates through the children in this property.
+        /// </summary>
+        /// 
+        /// <returns>
+        /// A <see cref="T:System.Collections.Generic.IEnumerator`1"/> that can be used to iterate through the children in this property.
+        /// </returns>
         public IEnumerator<WZObject> GetEnumerator()
         {
             ChildrenCheck();
@@ -514,7 +525,7 @@ namespace reWZ
                     case "Canvas":
                         return new WZCanvasProperty(name, parent, r, f);
                     case "Shape2D#Vector2D":
-                        return new WZVectorProperty(name, parent, r, f);
+                        return new WZPointProperty(name, parent, r, f);
                     case "Shape2D#Convex2D":
                         return new WZConvexProperty(name, parent, r, f);
                     case "Sound_DX8":

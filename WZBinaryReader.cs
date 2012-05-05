@@ -27,12 +27,15 @@
 // If you modify this library, you may extend this exception to your version
 // of the library, but you are not obligated to do so. If you do not wish to
 // do so, delete this exception statement from your version.
+
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.IO.Compression;
 using System.Text;
 using DotZLib;
+#if !ZLIB
+using System.IO.Compression;
+#endif
 
 namespace reWZ
 {
@@ -192,8 +195,8 @@ namespace reWZ
         internal static byte[] Inflate(byte[] compressed)
         {
 #if ZLIB
-            using(Inflater d = new Inflater())
-            using (MemoryStream @out = new MemoryStream(512 * 1024)) {
+            using (Inflater d = new Inflater())
+            using (MemoryStream @out = new MemoryStream(512*1024)) {
                 d.DataAvailable += (data, index, count) => { if (@out != null) @out.Write(data, index, count); };
                 d.Add(compressed);
                 d.Finish();
@@ -215,11 +218,11 @@ namespace reWZ
 #endif
             byte[] dec = new byte[length];
 #if ZLIB
-            using(Inflater d = new Inflater())
-            using(MemoryStream @out = new MemoryStream(2 * dec.Length)) {
+            using (Inflater d = new Inflater())
+            using (MemoryStream @out = new MemoryStream(2*dec.Length)) {
                 d.DataAvailable += (data, index, count) => { if (@out != null) @out.Write(data, index, count); };
                 int len;
-                while((len = @in.Read(dec, 0, dec.Length)) > 0)
+                while ((len = @in.Read(dec, 0, dec.Length)) > 0)
                     d.Add(dec, 0, len);
                 d.Finish();
                 return @out.ToArray();

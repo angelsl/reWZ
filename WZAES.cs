@@ -27,6 +27,7 @@
 // If you modify this library, you may extend this exception to your version
 // of the library, but you are not obligated to do so. If you do not wish to
 // do so, delete this exception statement from your version.
+
 using System;
 using System.IO;
 using System.Security.Cryptography;
@@ -36,10 +37,10 @@ namespace reWZ
 {
     internal class WZAES
     {
+        internal const uint OffsetKey = 0x581C3F6D;
         private static readonly byte[] AESKey = {0x13, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0xB4, 0x00, 0x00, 0x00, 0x1B, 0x00, 0x00, 0x00, 0x0F, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00, 0x00, 0x52, 0x00, 0x00, 0x00};
         private static readonly byte[] GMSIV = {0x4D, 0x23, 0xC7, 0x2B, 0x4D, 0x23, 0xC7, 0x2B, 0x4D, 0x23, 0xC7, 0x2B, 0x4D, 0x23, 0xC7, 0x2B};
         private static readonly byte[] KMSIV = {0xB9, 0x7D, 0x63, 0xE9, 0xB9, 0x7D, 0x63, 0xE9, 0xB9, 0x7D, 0x63, 0xE9, 0xB9, 0x7D, 0x63, 0xE9};
-        internal const uint OffsetKey = 0x581C3F6D;
 
         private readonly byte[] _asciiEncKey;
         private readonly byte[] _asciiKey;
@@ -128,18 +129,54 @@ namespace reWZ
         }
     }
 
+    /// <summary>
+    /// This enum is used to specify the WZ key to be used.
+    /// </summary>
     public enum WZVariant
     {
+        /// <summary>
+        /// MapleStory SEA
+        /// </summary>
         MSEA = 0,
+        /// <summary>
+        /// Korea MapleStory
+        /// </summary>
         KMS = 0,
+        /// <summary>
+        /// Korea MapleStory (Tespia)
+        /// </summary>
         KMST = 0,
+        /// <summary>
+        /// Japan MapleStory
+        /// </summary>
         JMS = 0,
+        /// <summary>
+        /// Japan MapleStory (Tespia)
+        /// </summary>
         JMST = 0,
+        /// <summary>
+        /// Europe MapleStory
+        /// </summary>
         EMS = 0,
+        /// <summary>
+        /// Global MapleStory
+        /// </summary>
         GMS = 1,
+        /// <summary>
+        /// Global MapleStory (Tespia)
+        /// </summary>
         GMST = 1,
+        /// <summary>
+        /// Taiwan MapleStory
+        /// </summary>
         TMS = 1,
+        /// <summary>
+        /// Brazil MapleStory
+        /// </summary>
         BMS = 2,
+        /// <summary>
+        /// Classic MapleStory (Data.wz)
+        /// </summary>
         Classic = 2
     }
 }

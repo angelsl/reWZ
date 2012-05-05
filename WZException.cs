@@ -27,10 +27,14 @@
 // If you modify this library, you may extend this exception to your version
 // of the library, but you are not obligated to do so. If you do not wish to
 // do so, delete this exception statement from your version.
+
 using System;
 
 namespace reWZ
 {
+    /// <summary>
+    /// An exception thrown when a parsing error occurs.
+    /// </summary>
     public class WZException : Exception
     {
         internal WZException(string message = "", Exception innerException = null) : base(message, innerException)

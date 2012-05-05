@@ -27,17 +27,20 @@
 // If you modify this library, you may extend this exception to your version
 // of the library, but you are not obligated to do so. If you do not wish to
 // do so, delete this exception statement from your version.
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
-using System.IO.Compression;
 using System.Runtime.InteropServices;
 
 namespace reWZ.WZProperties
 {
+    /// <summary>
+    /// A bitmap property, containing an image, and children.
+    /// </summary>
     public class WZCanvasProperty : WZProperty<Bitmap>
     {
         internal WZCanvasProperty(string name, WZObject parent, WZBinaryReader br, WZImage container)
@@ -70,10 +73,10 @@ namespace reWZ.WZProperties
 
         private byte[] DecryptPNG(byte[] @in)
         {
-            using(MemoryStream @sIn = new MemoryStream(@in, false))
-            using(BinaryReader @sBr = new BinaryReader(@sIn))
-            using(MemoryStream @sOut = new MemoryStream(@in.Length)){
-                while(@sIn.Position < @sIn.Length) {
+            using (MemoryStream @sIn = new MemoryStream(@in, false))
+            using (BinaryReader @sBr = new BinaryReader(@sIn))
+            using (MemoryStream @sOut = new MemoryStream(@in.Length)) {
+                while (@sIn.Position < @sIn.Length) {
                     int blockLen = @sBr.ReadInt32();
                     @sOut.Write(Image.File._aes.DecryptBytes(@sBr.ReadBytes(blockLen)), 0, blockLen);
                 }
@@ -117,7 +120,7 @@ namespace reWZ.WZProperties
                 {
                     Bitmap ret = new Bitmap(width, height, PixelFormat.Format16bppRgb565);
                     BitmapData bmpData = ret.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, PixelFormat.Format16bppRgb565);
-                    Debug.Assert(dec.Length == width * height * 2);
+                    Debug.Assert(dec.Length == width*height*2);
                     Marshal.Copy(dec, 0, bmpData.Scan0, dec.Length);
                     ret.UnlockBits(bmpData);
                     return ret;
@@ -126,7 +129,7 @@ namespace reWZ.WZProperties
                 case 517:
                 {
                     Bitmap ret = new Bitmap(width, height);
-                    Debug.Assert(dec.Length == width * height / 128);
+                    Debug.Assert(dec.Length == width*height/128);
                     int x = 0, y = 0;
                     unchecked {
                         foreach (byte t in dec)

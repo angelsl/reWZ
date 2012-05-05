@@ -5,3 +5,4 @@ obj/
 *.suo
 /_ReSharper.reWZ
 /DotZLib.xml
+*.pfx

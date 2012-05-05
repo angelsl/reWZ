@@ -29,9 +29,11 @@
     <DocumentationFile>bin\Release\reWZ.XML</DocumentationFile>
     <DefineConstants>ZLIB</DefineConstants>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <DebugType>pdbonly</DebugType>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <PropertyGroup>
-    <SignAssembly>true</SignAssembly>
+    <SignAssembly>false</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
     <AssemblyOriginatorKeyFile>angelsl.pfx</AssemblyOriginatorKeyFile>
@@ -67,6 +69,16 @@
     <None Include="angelsl.pfx" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>ilmerge /v2 /out:reWZ_.dll reWZ.dll DotZLib.dll
+rmdir /S /Q reWZ
+mkdir reWZ
+copy /V reWZ_.dll /B reWZ\reWZ.dll
+copy /V zlib1.dll /B reWZ\
+cd reWZ
+7z a -tzip reWZ.zip *
+copy /V reWZ.zip /B ..\..\</PostBuildEvent>
+  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

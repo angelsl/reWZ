@@ -169,8 +169,7 @@ namespace reWZ
                 case 0x1B:
                     return ReadWZStringAtOffset(ReadInt32(), encrypted);
                 default:
-                    WZFile.Die("Unknown string type in string block!");
-                    return "MISSINGNO."; // should never get here unless it fails to throw an exception.
+                    return WZFile.Die<String>("Unknown string type in string block!");
             }
         }
 

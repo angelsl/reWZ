@@ -114,13 +114,13 @@ namespace reWZ
         private readonly WZFile _file;
         private readonly string _name;
         private readonly WZObject _parent;
-        private readonly string _path;
+        private string _path;
 
         internal WZObject(string name, WZObject parent, WZFile container, bool children)
         {
             _name = name;
             _parent = parent;
-            _path = ConstructPath();
+            _path = null;
             _file = container;
             _canContainChildren = children;
             if (_canContainChildren) _backing = new Dictionary<string, WZObject>();
@@ -147,7 +147,7 @@ namespace reWZ
         /// </summary>
         public string Path
         {
-            get { return _path; }
+            get { return _path ?? ConstructPath(); }
         }
 
         /// <summary>
@@ -464,7 +464,8 @@ namespace reWZ
             WZObject p = this;
             while ((p = p.Parent) != null)
                 s.Insert(0, "/").Insert(0, p.Name);
-            return s.ToString();
+            _path = s.ToString();
+            return _path;
         }
 
         private void ChildrenCheck()

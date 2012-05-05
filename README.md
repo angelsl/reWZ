@@ -27,3 +27,4 @@ reWZ is licensed under the GNU GPL v3.0 with Classpath Exception.
  * jonyleeson, haha01haha01, Snow, and others who contributed to the original C# WzLib, and [later versions of it](http://code.google.com/p/maplelib2/).
  * [Fiel](http://www.southperry.net/member.php?u=1) from [Southperry](http://www.southperry.net), for giving me a reason to write this. And all his help.
  * [retep998](https://github.com/retep998), for continually boasting how [his library written in C++](https://github.com/NoLifeDev/NoLifeWz) parses the entire set of v40b WZ files in 7 seconds.
+ * [zlib](http://www.zlib.net/), for a.. nice library.

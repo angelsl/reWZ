@@ -61,7 +61,7 @@ namespace reWZ
                     _asciiKey[i] = mask;
                     _asciiEncKey[i] = (byte)(_wzKey[i] ^ mask);
                 }
-                ushort umask = 0XAAAA;
+                ushort umask = 0xAAAA;
                 for (int i = 0; i < _wzKey.Length/2; i += 2, ++umask) {
                     _unicodeKey[i] = umask;
                     _unicodeEncKey[i] = (ushort)(((_wzKey[i + 1] << 8) | _wzKey[i]) ^ umask);

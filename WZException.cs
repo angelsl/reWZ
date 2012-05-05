@@ -35,6 +35,7 @@ namespace reWZ
     /// <summary>
     /// An exception thrown when a parsing error occurs.
     /// </summary>
+    [Serializable]
     public class WZException : Exception
     {
         internal WZException(string message = "", Exception innerException = null) : base(message, innerException)

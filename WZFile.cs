@@ -41,7 +41,7 @@ namespace reWZ
     /// <summary>
     /// A WZ file.
     /// </summary>
-    public class WZFile : IDisposable
+    public sealed class WZFile : IDisposable
     {
         internal readonly WZAES _aes;
         internal readonly bool _encrypted;
@@ -124,6 +124,7 @@ namespace reWZ
         /// </summary>
         public void Dispose()
         {
+            _r.Close();
             _file.Dispose();
             _disposed = true;
         }

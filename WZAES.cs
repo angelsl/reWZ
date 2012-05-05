@@ -85,18 +85,16 @@ namespace reWZ
 
         private static byte[] GenerateKey(byte[] iv, byte[] aesKey)
         {
-            MemoryStream memStream = new MemoryStream(0x10000);
-            CryptoStream cStream = new CryptoStream(memStream, new AesManaged {KeySize = 256, Key = aesKey, Mode = CipherMode.ECB}.CreateEncryptor(), CryptoStreamMode.Write);
-            try {
+            using(MemoryStream memStream = new MemoryStream(0x10000))
+            using (AesManaged aem = new AesManaged { KeySize = 256, Key = aesKey, Mode = CipherMode.ECB })
+            using(CryptoStream cStream = new CryptoStream(memStream, aem.CreateEncryptor(), CryptoStreamMode.Write))
+            {
                 cStream.Write(iv, 0, 16);
                 for (int i = 0; i < (0x10000 - 16); i += 16)
                     cStream.Write(memStream.GetBuffer(), i, 16);
                 cStream.Flush();
                 return memStream.ToArray();
-            } finally {
-                cStream.Dispose();
-                memStream.Dispose();
-            }
+            } 
         }
 
         internal string DecryptASCIIString(byte[] asciiBytes, bool encrypted = true)

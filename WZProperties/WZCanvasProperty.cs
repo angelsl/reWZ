@@ -69,14 +69,9 @@ namespace reWZ.WZProperties
 
         private Bitmap ParsePNG(int width, int height, int format, byte[] data)
         {
-            byte[] dec = new byte[width * height * 4];
+            byte[] dec;
             using (MemoryStream @in = new MemoryStream(data, 2, data.Length - 2))
-            using (DeflateStream dStr = new DeflateStream(@in, CompressionMode.Decompress))
-            using (MemoryStream @out = new MemoryStream(width*height*4)) {
-                int len;
-                while ((len = dStr.Read(dec, 0, dec.Length)) > 0) @out.Write(dec, 0, len);
-                dec = @out.ToArray();
-            }
+                dec = WZBinaryReader.Inflate(@in);
 
             switch (format) {
                 case 1:

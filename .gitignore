@@ -4,3 +4,4 @@ obj/
 *.user
 *.suo
 /_ReSharper.reWZ
+/DotZLib.xml

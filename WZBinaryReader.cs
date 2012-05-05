@@ -16,7 +16,9 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Text;
+using DotZLib;
 
 namespace reWZ
 {
@@ -171,6 +173,52 @@ namespace reWZ
                 uint ret = ((((uint)BaseStream.Position - fstart) ^ 0xFFFFFFFF)*_versionHash) - WZAES.OffsetKey;
                 return (((ret << (int)ret) | (ret >> (int)(32 - ret))) ^ ReadUInt32()) + (fstart*2);
             }
+        }
+
+        internal static byte[] Inflate(byte[] compressed)
+        {
+#if ZLIB
+            using(Inflater d = new Inflater())
+            using (MemoryStream @out = new MemoryStream(512 * 1024)) {
+                d.DataAvailable += (data, index, count) => { if (@out != null) @out.Write(data, index, count); };
+                d.Add(compressed);
+                d.Finish();
+                return @out.ToArray();
+            }
+#else
+            using (MemoryStream @in = new MemoryStream(compressed))
+                return Inflate(@in);
+#endif
+        }
+
+        internal static byte[] Inflate(Stream @in)
+        {
+            long length = 512*1024;
+#if ZLIB
+            try {
+                length = @in.Length;
+            } catch {}
+#endif
+            byte[] dec = new byte[length];
+#if ZLIB
+            using(Inflater d = new Inflater())
+            using(MemoryStream @out = new MemoryStream(2 * dec.Length)) {
+                d.DataAvailable += (data, index, count) => { if (@out != null) @out.Write(data, index, count); };
+                int len;
+                while((len = @in.Read(dec, 0, dec.Length)) > 0)
+                    d.Add(dec, 0, len);
+                d.Finish();
+                return @out.ToArray();
+            }
+#else
+            using (DeflateStream dStr = new DeflateStream(@in, CompressionMode.Decompress))
+            using (MemoryStream @out = new MemoryStream(dec.Length * 2))
+            {
+                int len;
+                while ((len = dStr.Read(dec, 0, dec.Length)) > 0) @out.Write(dec, 0, len);
+                return @out.ToArray();
+            }
+#endif
         }
     }
 

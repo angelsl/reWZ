@@ -19,6 +19,8 @@ Or, if you prefer to go the old-fashioned way:
 
 Otherwise, reWZ is pretty well documented (via inline XMLdoc), but if you have any questions, feel free to send angelsl a message.
 
+If you are dumping or otherwise reading the entire WZ file, it is recommended that you read the entire file into memory before parsing, or the parser could take a very long time.
+
 ##License
 reWZ is licensed under the GNU GPL v3.0 with Classpath Exception.
 

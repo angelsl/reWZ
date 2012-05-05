@@ -38,9 +38,9 @@ using reWZ.WZProperties;
 namespace reWZ
 {
     /// <summary>
-    /// An abstract class representing a WZ property that contains a value of type <typeparamref name="T"/>.
+    ///   An abstract class representing a WZ property that contains a value of type <typeparamref name="T" /> .
     /// </summary>
-    /// <typeparam name="T">The type that this property contains.</typeparam>
+    /// <typeparam name="T"> The type that this property contains. </typeparam>
     public abstract class WZProperty<T> : WZObject
     {
         private readonly WZImage _image;
@@ -59,12 +59,16 @@ namespace reWZ
 
         internal WZProperty(string name, WZObject parent, WZBinaryReader r, WZImage container, bool children) : base(name, parent, container.File, children)
         {
-            _value = default(T);
             _image = container;
             _reader = r;
             _offset = r.BaseStream.Position;
-            Parse(r, !File._parseAll);
-            _parsed = File._parseAll;
+            if (File._parseAll) {
+                _value = Parse(r, false);
+                _parsed = true;
+            } else {
+                _value = default(T);
+                Parse(r, true);
+            }
         }
 
         /// <summary>
@@ -101,7 +105,7 @@ namespace reWZ
     }
 
     /// <summary>
-    /// An object in a WZ file.
+    ///   An object in a WZ file.
     /// </summary>
     public abstract class WZObject : IEnumerable<WZObject>, IDictionary<String, WZObject>
     {
@@ -395,12 +399,9 @@ namespace reWZ
         #region IEnumerable<WZObject> Members
 
         /// <summary>
-        /// Returns an enumerator that iterates through the children in this property.
+        ///   Returns an enumerator that iterates through the children in this property.
         /// </summary>
-        /// 
-        /// <returns>
-        /// A <see cref="T:System.Collections.Generic.IEnumerator`1"/> that can be used to iterate through the children in this property.
-        /// </returns>
+        /// <returns> A <see cref="T:System.Collections.Generic.IEnumerator`1" /> that can be used to iterate through the children in this property. </returns>
         public IEnumerator<WZObject> GetEnumerator()
         {
             ChildrenCheck();

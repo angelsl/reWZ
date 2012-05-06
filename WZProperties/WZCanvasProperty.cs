@@ -64,7 +64,7 @@ namespace reWZ.WZProperties
             if (initial) br.Skip(blockLen); // block Len & png data
             else {
                 br.Skip(1);
-                // ushort header = br.PeekFor(() => br.ReadUInt16());
+                ushort header = br.PeekFor(() => br.ReadUInt16());
                 byte[] pngData = br.ReadBytes(blockLen - 1);
                 return ParsePNG(width, height, format1 + format2, Image._encrypted ? DecryptPNG(pngData) : pngData);
             }

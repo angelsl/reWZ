@@ -69,7 +69,7 @@ namespace reWZ
 #if MMAP
             : this(MemoryMappedFile.CreateFromFile(path, FileMode.Open), variant, encrypted, parseAll)                       
 #else
-            : this(File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read), variant, encrypted, parseAll)
+            : this(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 8192, FileOptions.RandomAccess), variant, encrypted, parseAll)
 #endif
         {}
 

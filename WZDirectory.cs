@@ -53,12 +53,13 @@ namespace reWZ
                             wzbr.Skip(10);
                             continue;
                         case 2:
+                            int x = wzbr.ReadInt32();
                             wzbr.PeekFor(() => {
-                                             wzbr.Seek(wzbr.ReadInt32() + File._fstart);
+                                             wzbr.Seek(x + File._fstart);
                                              type = wzbr.ReadByte();
                                              name = wzbr.ReadWZString(File._encrypted);
                                          });
-                            wzbr.Skip(4);
+                            
                             break;
                         case 3:
                         case 4:

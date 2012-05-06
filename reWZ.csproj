@@ -56,7 +56,6 @@
     <Compile Include="WZImage.cs" />
     <Compile Include="WZProperties\SimpleProperties.cs" />
     <Compile Include="WZProperties\WZCanvasProperty.cs" />
-    <Compile Include="WZProperties\WZMP3Property.cs" />
     <Compile Include="WZProperties\WZSubProperty.cs" />
     <Compile Include="WZProperty.cs" />
   </ItemGroup>

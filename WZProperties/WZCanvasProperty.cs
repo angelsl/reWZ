@@ -39,7 +39,7 @@ using System.Runtime.InteropServices;
 namespace reWZ.WZProperties
 {
     /// <summary>
-    /// A bitmap property, containing an image, and children.
+    ///   A bitmap property, containing an image, and children.
     /// </summary>
     public class WZCanvasProperty : WZProperty<Bitmap>
     {
@@ -53,7 +53,7 @@ namespace reWZ.WZProperties
             if (br.ReadByte() == 1) {
                 br.Skip(2);
                 List<WZObject> l = WZExtendedParser.ParsePropertyList(br, this, Image, Image._encrypted);
-                if (Count == 0) l.ForEach(Add);
+                if (ChildCount == 0) l.ForEach(Add);
             }
             int width = br.ReadWZInt(); // width
             int height = br.ReadWZInt(); // height
@@ -64,9 +64,9 @@ namespace reWZ.WZProperties
             if (initial) br.Skip(blockLen); // block Len & png data
             else {
                 br.Skip(1);
-                ushort header = br.PeekFor(() => br.ReadUInt16());
+                // ushort header = br.PeekFor(() => br.ReadUInt16());
                 byte[] pngData = br.ReadBytes(blockLen - 1);
-                return ParsePNG(width, height, format1 + format2, header != 0x9C78 && header != 0xDA78 ? DecryptPNG(pngData) : pngData);
+                return ParsePNG(width, height, format1 + format2, Image._encrypted ? DecryptPNG(pngData) : pngData);
             }
             return null;
         }
@@ -78,7 +78,7 @@ namespace reWZ.WZProperties
             using (MemoryStream @sOut = new MemoryStream(@in.Length)) {
                 while (@sIn.Position < @sIn.Length) {
                     int blockLen = @sBr.ReadInt32();
-                    @sOut.Write(Image.File._aes.DecryptBytes(@sBr.ReadBytes(blockLen)), 0, blockLen);
+                    @sOut.Write(File._aes.DecryptBytes(@sBr.ReadBytes(blockLen)), 0, blockLen);
                 }
                 return @sOut.ToArray();
             }
@@ -87,47 +87,29 @@ namespace reWZ.WZProperties
         private Bitmap ParsePNG(int width, int height, int format, byte[] data)
         {
             byte[] dec;
+#if ZLIB
+            using (MemoryStream @in = new MemoryStream(data, 0, data.Length))
+#else
             using (MemoryStream @in = new MemoryStream(data, 2, data.Length - 2))
+#endif
                 dec = WZBinaryReader.Inflate(@in);
 
             switch (format) {
                 case 1:
-                {
-                    Bitmap ret = new Bitmap(width, height, PixelFormat.Format32bppArgb);
-                    BitmapData bmpData = ret.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
                     Debug.Assert(dec.Length == width*height*2);
                     byte[] argb = new byte[dec.Length*2];
                     for (int i = 0; i < dec.Length; i++) {
-                        int b = dec[i] & 0x0F;
-                        argb[i*2] = (byte)(b | (b << 4));
-                        b = dec[i] & 0xF0;
-                        argb[i*2 + 1] = (byte)(b | ((b >> 4)));
+                        argb[i*2] = (byte)((dec[i] & 0x0F)*0x11);
+                        argb[i*2 + 1] = (byte)(((dec[i] & 0xF0) >> 4)*0x11);
                     }
-                    Marshal.Copy(argb, 0, bmpData.Scan0, argb.Length);
-                    ret.UnlockBits(bmpData);
-                    return ret;
-                }
+                    return new Bitmap(width, height, 4*width, PixelFormat.Format32bppArgb, GCHandle.Alloc(argb, GCHandleType.Pinned).AddrOfPinnedObject());
                 case 2:
-                {
-                    Bitmap ret = new Bitmap(width, height, PixelFormat.Format32bppArgb);
-                    BitmapData bmpData = ret.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
                     Debug.Assert(dec.Length == width*height*4);
-                    Marshal.Copy(dec, 0, bmpData.Scan0, dec.Length);
-                    ret.UnlockBits(bmpData);
-                    return ret;
-                }
+                    return new Bitmap(width, height, 4*width, PixelFormat.Format32bppArgb, GCHandle.Alloc(dec, GCHandleType.Pinned).AddrOfPinnedObject());
                 case 513:
-                {
-                    Bitmap ret = new Bitmap(width, height, PixelFormat.Format16bppRgb565);
-                    BitmapData bmpData = ret.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, PixelFormat.Format16bppRgb565);
                     Debug.Assert(dec.Length == width*height*2);
-                    Marshal.Copy(dec, 0, bmpData.Scan0, dec.Length);
-                    ret.UnlockBits(bmpData);
-                    return ret;
-                }
-
+                    return new Bitmap(width, height, dec.Length/height, PixelFormat.Format16bppRgb565, GCHandle.Alloc(dec, GCHandleType.Pinned).AddrOfPinnedObject());
                 case 517:
-                {
                     Bitmap ret = new Bitmap(width, height);
                     Debug.Assert(dec.Length == width*height/128);
                     int x = 0, y = 0;
@@ -144,9 +126,8 @@ namespace reWZ.WZProperties
                                     x++;
                                 }
                             }
+                        return ret;
                     }
-                    return ret;
-                }
                 default:
                     return WZFile.Die<Bitmap>(String.Format("Unknown bitmap format {0}.", format));
             }

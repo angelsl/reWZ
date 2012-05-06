@@ -32,6 +32,7 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+
 #if MMAP
 using System.IO.MemoryMappedFiles;
 #endif
@@ -39,7 +40,7 @@ using System.IO.MemoryMappedFiles;
 namespace reWZ
 {
     /// <summary>
-    /// A WZ file.
+    ///   A WZ file.
     /// </summary>
     public sealed class WZFile : IDisposable
     {
@@ -106,7 +107,7 @@ namespace reWZ
         }
 
         /// <summary>
-        /// The root directory of the WZ file.
+        ///   The root directory of the WZ file.
         /// </summary>
         public WZDirectory MainDirectory
         {

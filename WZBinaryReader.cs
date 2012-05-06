@@ -219,7 +219,7 @@ namespace reWZ
 #if ZLIB
             using (Inflater d = new Inflater())
             using (MemoryStream @out = new MemoryStream(2*dec.Length)) {
-                d.DataAvailable += (data, index, count) => { if (@out != null) @out.Write(data, index, count); };
+                d.DataAvailable += (data, index, count) => @out.Write(data, index, count);
                 int len;
                 while ((len = @in.Read(dec, 0, dec.Length)) > 0)
                     d.Add(dec, 0, len);

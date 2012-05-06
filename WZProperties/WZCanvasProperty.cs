@@ -96,38 +96,23 @@ namespace reWZ.WZProperties
 
             switch (format) {
                 case 1:
-                    Debug.Assert(dec.Length == width*height*2);
                     byte[] argb = new byte[dec.Length*2];
                     for (int i = 0; i < dec.Length; i++) {
                         argb[i*2] = (byte)((dec[i] & 0x0F)*0x11);
                         argb[i*2 + 1] = (byte)(((dec[i] & 0xF0) >> 4)*0x11);
                     }
-                    return new Bitmap(width, height, 4*width, PixelFormat.Format32bppArgb, GCHandle.Alloc(argb, GCHandleType.Pinned).AddrOfPinnedObject());
+                    dec = argb;
+                    goto case 2;
                 case 2:
                     Debug.Assert(dec.Length == width*height*4);
                     return new Bitmap(width, height, 4*width, PixelFormat.Format32bppArgb, GCHandle.Alloc(dec, GCHandleType.Pinned).AddrOfPinnedObject());
                 case 513:
                     Debug.Assert(dec.Length == width*height*2);
-                    return new Bitmap(width, height, dec.Length/height, PixelFormat.Format16bppRgb565, GCHandle.Alloc(dec, GCHandleType.Pinned).AddrOfPinnedObject());
+                    return new Bitmap(width, height, dec.Length / height, PixelFormat.Format16bppRgb565, GCHandle.Alloc(dec, GCHandleType.Pinned).AddrOfPinnedObject());
                 case 517:
-                    Bitmap ret = new Bitmap(width, height);
-                    Debug.Assert(dec.Length == width*height/128);
-                    int x = 0, y = 0;
-                    unchecked {
-                        foreach (byte t in dec)
-                            for (byte j = 0; j < 8; j++) {
-                                byte iB = (byte)(((t & (0x01 << (7 - j))) >> (7 - j))*0xFF);
-                                for (int k = 0; k < 16; k++) {
-                                    if (x == width) {
-                                        x = 0;
-                                        y++;
-                                    }
-                                    ret.SetPixel(x, y, Color.FromArgb(0xFF, iB, iB, iB));
-                                    x++;
-                                }
-                            }
-                        return ret;
-                    }
+                    width >>= 4;
+                    height >>= 4;
+                    goto case 513;
                 default:
                     return WZFile.Die<Bitmap>(String.Format("Unknown bitmap format {0}.", format));
             }

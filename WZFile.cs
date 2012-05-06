@@ -53,7 +53,7 @@ namespace reWZ
         private readonly Stream _file;
 #endif
         private readonly WZBinaryReader _r;
-        private readonly WZVariant _variant;
+        internal readonly WZVariant _variant;
         private bool _disposed;
         internal uint _fstart;
         private WZDirectory _maindir;

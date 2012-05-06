@@ -88,7 +88,7 @@ namespace reWZ
             lock (File) {
                 _r.Seek(0);
                 if (_r.ReadByte() != 0x73) WZFile.Die("WZImage with invalid header (not beginning with 0x73!)");
-                if ((int)File._aes.Variant == 2) _encrypted = false;
+                if ((int)File._variant == 2) _encrypted = false;
                 else if (_r.PeekFor(() => _r.ReadWZString()) == "Property") _encrypted = true;
                 else if (_r.PeekFor(() => _r.ReadWZString(false)) == "Property") _encrypted = false;
                 else WZFile.Die("WZImage with invalid header (no Property string! check your WZVariant)");

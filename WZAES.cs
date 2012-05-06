@@ -48,15 +48,8 @@ namespace reWZ
         private readonly ushort[] _unicodeKey;
         private readonly byte[] _wzKey;
 
-        private WZVariant _variant;
-        internal WZVariant Variant
-        {
-            get { return _variant; }
-        }
-
         internal WZAES(WZVariant version)
         {
-            _variant = version;
             _wzKey = GetWZKey(version);
             _asciiKey = new byte[_wzKey.Length];
             _unicodeKey = new ushort[_wzKey.Length/2];

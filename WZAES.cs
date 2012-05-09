@@ -119,10 +119,13 @@ namespace reWZ
             return ret.ToString();
         }
 
-        internal byte[] DecryptBytes(byte[] bytes)
+        internal unsafe byte[] DecryptBytes(byte[] bytes)
         {
-            for (int i = 0; i < bytes.Length; ++i)
-                bytes[i] ^= _wzKey[i];
+            fixed(byte* c = bytes, k = _wzKey) {
+                byte* d = c, l = k;
+                for (int i = 0; i < bytes.Length; ++i)
+                    *(d++) ^= *(l++);
+            }
             return bytes;
         }
     }

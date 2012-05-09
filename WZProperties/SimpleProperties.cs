@@ -35,13 +35,13 @@ using System.Linq;
 namespace reWZ.WZProperties
 {
     /// <summary>
-    /// A struct used to represent nothing.
+    ///   A struct used to represent nothing.
     /// </summary>
     public struct WZNothing
     {}
 
     /// <summary>
-    /// Null.
+    ///   Null.
     /// </summary>
     public class WZNullProperty : WZProperty<WZNothing>
     {
@@ -50,7 +50,7 @@ namespace reWZ.WZProperties
     }
 
     /// <summary>
-    /// An unsigned 16-bit integer property.
+    ///   An unsigned 16-bit integer property.
     /// </summary>
     public class WZUInt16Property : WZProperty<ushort>
     {
@@ -60,7 +60,7 @@ namespace reWZ.WZProperties
     }
 
     /// <summary>
-    /// A compressed signed 32-bit integer property.
+    ///   A compressed signed 32-bit integer property.
     /// </summary>
     public class WZInt32Property : WZProperty<int>
     {
@@ -70,7 +70,7 @@ namespace reWZ.WZProperties
     }
 
     /// <summary>
-    /// A floating point number with single precision property.
+    ///   A floating point number with single precision property.
     /// </summary>
     public class WZSingleProperty : WZProperty<Single>
     {
@@ -86,7 +86,7 @@ namespace reWZ.WZProperties
     }
 
     /// <summary>
-    /// A floating point number with double precision property.
+    ///   A floating point number with double precision property.
     /// </summary>
     public class WZDoubleProperty : WZProperty<Double>
     {
@@ -96,17 +96,27 @@ namespace reWZ.WZProperties
     }
 
     /// <summary>
-    /// A string property.
+    ///   A string property.
     /// </summary>
     public class WZStringProperty : WZProperty<String>
     {
         internal WZStringProperty(string name, WZObject parent, WZBinaryReader reader, WZImage container)
-            : base(name, parent, reader.ReadWZStringBlock(container.File._encrypted), container, false)
+            : base(name, parent, reader, container, false)
         {}
+
+        internal override string Parse(WZBinaryReader r, bool initial)
+        {
+            if (initial) {
+                r.SkipWZStringBlock();
+                return null;
+            }
+
+            return r.ReadWZStringBlock(Image._encrypted);
+        }
     }
 
     /// <summary>
-    /// A point property, containing an X and Y value pair.
+    ///   A point property, containing an X and Y value pair.
     /// </summary>
     public class WZPointProperty : WZProperty<Point>
     {
@@ -116,7 +126,7 @@ namespace reWZ.WZProperties
     }
 
     /// <summary>
-    /// A link property, used to link to other properties in the WZ file.
+    ///   A link property, used to link to other properties in the WZ file.
     /// </summary>
     public class WZUOLProperty : WZProperty<String>
     {
@@ -125,18 +135,18 @@ namespace reWZ.WZProperties
         {}
 
         /// <summary>
-        /// Resolves the link once.
+        ///   Resolves the link once.
         /// </summary>
-        /// <returns>The WZ object that this link refers to.</returns>
+        /// <returns> The WZ object that this link refers to. </returns>
         public WZObject Resolve()
         {
             return Value.Split('/').Where(node => node != ".").Aggregate(Parent, (current, node) => node == ".." ? current.Parent : current[node]);
         }
 
         /// <summary>
-        /// Resolves the link recursively, repeatedly resolving links until an object is reached.
+        ///   Resolves the link recursively, repeatedly resolving links until an object is reached.
         /// </summary>
-        /// <returns>The non-link WZ object that this link refers to.</returns>
+        /// <returns> The non-link WZ object that this link refers to. </returns>
         public WZObject ResolveFully()
         {
             WZObject ret = this;
@@ -147,13 +157,13 @@ namespace reWZ.WZProperties
     }
 
     /// <summary>
-    /// A sound property.
+    ///   A sound property.
     /// </summary>
     public class WZMP3Property : WZProperty<byte[]>
     {
         internal WZMP3Property(string name, WZObject parent, WZBinaryReader r, WZImage container)
             : base(name, parent, r, container, false)
-        { }
+        {}
 
         internal override byte[] Parse(WZBinaryReader r, bool initial)
         {

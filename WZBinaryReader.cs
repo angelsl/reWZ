@@ -33,6 +33,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using DotZLib;
+
 #if !ZLIB
 using System.IO.Compression;
 #endif
@@ -170,6 +171,24 @@ namespace reWZ
                     return ReadWZStringAtOffset(ReadInt32(), encrypted);
                 default:
                     return WZFile.Die<String>("Unknown string type in string block!");
+            }
+        }
+
+        internal void SkipWZStringBlock()
+        {
+            switch (ReadByte()) {
+                case 0:
+                case 0x73:
+                    int length = ReadSByte();
+                    Skip((length >= 0) ? (length == 127 ? ReadInt32() : length)*2 : length == -128 ? ReadInt32() : -length);
+                    return;
+                case 1:
+                case 0x1B:
+                    Skip(4);
+                    return;
+                default:
+                    WZFile.Die("Unknown string type in string block!");
+                    return;
             }
         }
 

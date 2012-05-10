@@ -33,7 +33,7 @@ using System;
 namespace reWZ
 {
     /// <summary>
-    /// An exception thrown when a parsing error occurs.
+    ///   An exception thrown when a parsing error occurs.
     /// </summary>
     [Serializable]
     public class WZException : Exception

@@ -31,7 +31,7 @@
 namespace reWZ
 {
     /// <summary>
-    /// A WZ image in a WZ file.
+    ///   A WZ image in a WZ file.
     /// </summary>
     public sealed class WZImage : WZObject
     {
@@ -42,7 +42,7 @@ namespace reWZ
         internal WZImage(string name, WZObject parent, WZFile file, WZBinaryReader reader) : base(name, parent, file, true)
         {
             _r = reader;
-            if (file._parseAll) Parse();
+            if (file._flag.IsSet(WZReadSelection.EagerParseImage)) Parse();
         }
 
         /// <summary>
@@ -60,7 +60,7 @@ namespace reWZ
         }
 
         /// <summary>
-        /// Returns the number of children this property contains.
+        ///   Returns the number of children this property contains.
         /// </summary>
         public override int ChildCount
         {
@@ -72,10 +72,10 @@ namespace reWZ
         }
 
         /// <summary>
-        /// Checks if this property has a child with name <paramref name="name"/>.
+        ///   Checks if this property has a child with name <paramref name="name" /> .
         /// </summary>
-        /// <param name="name">The name of the child to locate.</param>
-        /// <returns>true if this property has such a child, false otherwise or if this property cannot contain children.</returns>
+        /// <param name="name"> The name of the child to locate. </param>
+        /// <returns> true if this property has such a child, false otherwise or if this property cannot contain children. </returns>
         public override bool HasChild(string name)
         {
             Parse();
@@ -92,7 +92,7 @@ namespace reWZ
                 else if (_r.PeekFor(() => _r.ReadWZString()) == "Property") _encrypted = true;
                 else if (_r.PeekFor(() => _r.ReadWZString(false)) == "Property") _encrypted = false;
                 else WZFile.Die("WZImage with invalid header (no Property string! check your WZVariant)");
-                if(_r.ReadWZString(_encrypted) != "Property") WZFile.Die("Failed to determine image encryption!");
+                if (_r.ReadWZString(_encrypted) != "Property") WZFile.Die("Failed to determine image encryption!");
                 if (_r.ReadUInt16() != 0) WZFile.Die("WZImage with invalid header (no zero UInt16!)");
                 WZExtendedParser.ParsePropertyList(_r, this, this, _encrypted).ForEach(Add);
                 _parsed = true;

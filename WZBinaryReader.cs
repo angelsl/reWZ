@@ -113,9 +113,10 @@ namespace reWZ
             if (length > 0) {
                 length = length == 127 ? ReadInt32() : length;
                 if (length == 0) return "";
+                byte[] rbytes = ReadBytes(length * 2);
                 ushort[] raw = new ushort[length];
                 for (int i = 0; i < length; ++i)
-                    raw[i] = ReadUInt16();
+                    raw[i] = (ushort)((uint)rbytes[i*2] | (uint)rbytes[i*2+1] << 8);
                 return _aes.DecryptUnicodeString(raw, encrypted);
             } // !(length >= 0), i think we can assume length < 0, but the compiler can't seem to see that
             length = length == -128 ? ReadInt32() : -length;
@@ -334,13 +335,13 @@ namespace reWZ
         public override int Read(byte[] buffer, int offset, int count)
         {
             long origPos = _backing.Position;
-            _backing.Position = _posInBacking;
+            if (origPos != _posInBacking) _backing.Position = _posInBacking;
             count = (int)Math.Min(count, _end - _posInBacking);
             if (count == 0) return 0;
             count = _backing.Read(buffer, offset, count);
-            Debug.Assert((_posInBacking + count) == _backing.Position);
-            _posInBacking = _backing.Position;
-            _backing.Position = origPos;
+            _posInBacking += count;
+            Debug.Assert(_posInBacking == _backing.Position);
+            //_backing.Position = origPos;
             return count;
         }
 
@@ -353,11 +354,11 @@ namespace reWZ
         {
             if (_posInBacking >= _end) return -1;
             long origPos = _backing.Position;
-            _backing.Position = _posInBacking;
+            if(origPos != _posInBacking) _backing.Position = _posInBacking;
             int r = _backing.ReadByte();
             ++_posInBacking;
             Debug.Assert(_posInBacking == _backing.Position);
-            _backing.Position = origPos;
+            //_backing.Position = origPos;
             return r;
         }
     }

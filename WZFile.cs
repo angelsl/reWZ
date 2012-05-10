@@ -29,9 +29,11 @@
 // do so, delete this exception statement from your version.
 
 using System;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 #if MMAP
 using System.IO.MemoryMappedFiles;
@@ -46,7 +48,6 @@ namespace reWZ
     {
         internal readonly WZAES _aes;
         internal readonly bool _encrypted;
-        internal readonly bool _parseAll;
 #if MMAP
         private readonly MemoryMappedFile _file;
 #else
@@ -57,6 +58,7 @@ namespace reWZ
         private bool _disposed;
         internal uint _fstart;
         private WZDirectory _maindir;
+        internal WZReadSelection _flag;
 
         /// <summary>
         ///   Creates and loads a WZ file.
@@ -64,12 +66,12 @@ namespace reWZ
         /// <param name="path"> The path where the WZ file is located. </param>
         /// <param name="variant"> The variant of this WZ file. </param>
         /// <param name="encrypted"> Whether the WZ file is encrypted outside a WZ image. </param>
-        /// <param name="parseAll"> Whether to parse the WZ file completely, or on demand. </param>
-        public WZFile(string path, WZVariant variant, bool encrypted, bool parseAll = false)
+        /// <param name="flag"> WZ parsing flags. </param>
+        public WZFile(string path, WZVariant variant, bool encrypted, WZReadSelection flag = WZReadSelection.None)
 #if MMAP
-            : this(MemoryMappedFile.CreateFromFile(path, FileMode.Open), variant, encrypted, parseAll)                       
+            : this(MemoryMappedFile.CreateFromFile(path, FileMode.Open), variant, encrypted, flag)                       
 #else
-            : this(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 8192, FileOptions.RandomAccess), variant, encrypted, parseAll)
+            : this(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 6144, FileOptions.RandomAccess), variant, encrypted, flag)
 #endif
         {}
 
@@ -80,8 +82,8 @@ namespace reWZ
     /// <param name="input"> The memory-mapped file containing the WZ file. </param>
     /// <param name="variant"> The variant of this WZ file. </param>
     /// <param name="encrypted"> Whether the WZ file is encrypted outside a WZ image. </param>
-    /// <param name="parseAll"> Whether to parse the WZ file completely, or on demand. </param>
-        public WZFile(MemoryMappedFile input, WZVariant variant, bool encrypted, bool parseAll = false)
+    /// <param name="flag"> WZ parsing flags. </param>
+        public WZFile(MemoryMappedFile input, WZVariant variant, bool encrypted, WZReadSelection flag = WZReadSelection.None)
 #else
         /// <summary>
         ///   Creates and loads a WZ file.
@@ -89,14 +91,14 @@ namespace reWZ
         /// <param name="input"> The stream containing the WZ file. </param>
         /// <param name="variant"> The variant of this WZ file. </param>
         /// <param name="encrypted"> Whether the WZ file is encrypted outside a WZ image. </param>
-        /// <param name="parseAll"> Whether to parse the WZ file completely, or on demand. </param>
-        public WZFile(Stream input, WZVariant variant, bool encrypted, bool parseAll = false)
+        /// <param name="flag"> WZ parsing flags. </param>
+        public WZFile(Stream input, WZVariant variant, bool encrypted, WZReadSelection flag = WZReadSelection.None)
 #endif
         {
             _file = input;
             _variant = variant;
             _encrypted = encrypted;
-            _parseAll = parseAll;
+            _flag = flag;
             _aes = new WZAES(_variant);
 #if MMAP
             _r = new WZBinaryReader(_file.CreateViewStream(), _aes, 0);
@@ -188,25 +190,22 @@ namespace reWZ
                 _r.ReadWZInt();
                 offset = _r.BaseStream.Position;
                 _r.Skip(4);
-                if (type == 4) {
-                    success = true;
-                    break;
-                }
+                if (type != 4) continue;
+                success = true;
+                break;
             }
             if (!success) Die("WZ file has no images!");
             success = false;
-            uint vHash;
             for (ushort v = 0; v < ushort.MaxValue; v++) {
-                vHash = v.ToString(CultureInfo.InvariantCulture).Aggregate<char, uint>(0, (current, t) => (32*current) + t + 1);
+                uint vHash = v.ToString(CultureInfo.InvariantCulture).Aggregate<char, uint>(0, (current, t) => (32*current) + t + 1);
                 if ((0xFF ^ (vHash >> 24) ^ (vHash << 8 >> 24) ^ (vHash << 16 >> 24) ^ (vHash << 24 >> 24)) != ver) continue;
                 _r.Seek(offset);
                 _r.VersionHash = vHash;
-                _r.Seek(_r.ReadWZOffset(_fstart));
                 try {
-                    if (_r.ReadByte() == 0x73 && (_r.PeekFor(() => _r.ReadWZString()) == "Property" || _r.PeekFor(() => _r.ReadWZString(false)) == "Property")) {
-                        success = true;
-                        break;
-                    }
+                    _r.Seek(_r.ReadWZOffset(_fstart));
+                    if (_r.ReadByte() != 0x73 || (_r.PeekFor(() => _r.ReadWZString()) != "Property" && _r.PeekFor(() => _r.ReadWZString(false)) != "Property")) continue;
+                    success = true;
+                    break;
                 } catch {
                     success = false;
                 }
@@ -233,5 +232,50 @@ namespace reWZ
         {
             throw new WZException(cause);
         }
+    }
+
+    /// <summary>
+    /// WZ reading flags.
+    /// </summary>
+    [Flags]
+    public enum WZReadSelection : byte
+    {
+        /// <summary>
+        /// No flags are enabled, that is, lazy loading of properties and WZ images is enabled.
+        /// </summary>
+        None = 0,
+        /// <summary>
+        /// Set this flag to disable lazy loading of string properties.
+        /// </summary>
+        EagerParseStrings = 1,
+        /// <summary>
+        /// Set this flag to disable lazy loading of MP3 properties.
+        /// </summary>
+        EagerParseMP3 = 2,
+        /// <summary>
+        /// Set this flag to disable lazy loading of canvas properties.
+        /// </summary>
+        EagerParseCanvas = 4,
+        /// <summary>
+        /// Set this flag to completely disable loading of canvas properties.
+        /// </summary>
+        NeverParseCanvas = 8,
+        /// <summary>
+        /// Set this flag to disable lazy loading of string, MP3 and canvas properties.
+        /// </summary>
+        EagerParseAll = EagerParseCanvas | EagerParseMP3 | EagerParseStrings,
+        /// <summary>
+        /// Set this flag to disable lazy loading of WZ images.
+        /// </summary>
+        EagerParseImage = 16
+    }
+
+    internal static class Util
+    {
+        internal static bool IsSet(this WZReadSelection options, WZReadSelection flag)
+        {
+            return (options & flag) == flag;
+        }
+
     }
 }

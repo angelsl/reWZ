@@ -31,7 +31,7 @@
 namespace reWZ
 {
     /// <summary>
-    /// A directory in a WZ file. This cannot be located inside an Image file.
+    ///   A directory in a WZ file. This cannot be located inside an Image file.
     /// </summary>
     public class WZDirectory : WZObject
     {
@@ -59,7 +59,7 @@ namespace reWZ
                                              type = wzbr.ReadByte();
                                              name = wzbr.ReadWZString(File._encrypted);
                                          });
-                            
+
                             break;
                         case 3:
                         case 4:

@@ -104,14 +104,15 @@ namespace reWZ.WZProperties
             : base(name, parent, reader, container, false)
         {}
 
-        internal override string Parse(WZBinaryReader r, bool initial)
+        internal override bool Parse(WZBinaryReader r, bool initial, out string result)
         {
-            if (initial) {
-                r.SkipWZStringBlock();
-                return null;
+            if (!initial || File._flag.IsSet(WZReadSelection.EagerParseStrings)) {
+                result = r.ReadWZStringBlock(Image._encrypted);
+                return true;
             }
-
-            return r.ReadWZStringBlock(Image._encrypted);
+            r.SkipWZStringBlock();
+            result = null;
+            return false;
         }
     }
 
@@ -165,15 +166,19 @@ namespace reWZ.WZProperties
             : base(name, parent, r, container, false)
         {}
 
-        internal override byte[] Parse(WZBinaryReader r, bool initial)
+        internal override bool Parse(WZBinaryReader r, bool initial, out byte[] result)
         {
             r.Skip(1);
             int blockLen = r.ReadWZInt(); // sound data length
             r.ReadWZInt(); // sound duration
             r.Skip(82); // header [82 bytes]
-            if (initial) r.Skip(blockLen);
-            else return r.ReadBytes(blockLen); // sound data 
-            return null;
+            if (!initial || File._flag.IsSet(WZReadSelection.EagerParseMP3)) {
+                result = r.ReadBytes(blockLen);
+                return true; // sound data 
+            }
+            r.Skip(blockLen);
+            result = null;
+            return false;
         }
     }
 }

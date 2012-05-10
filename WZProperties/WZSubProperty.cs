@@ -33,7 +33,7 @@ using System.Globalization;
 namespace reWZ.WZProperties
 {
     /// <summary>
-    /// A directory in a WZ image. This cannot be located outside an image.
+    ///   A directory in a WZ image. This cannot be located outside an image.
     /// </summary>
     public class WZSubProperty : WZProperty<WZNothing>
     {
@@ -44,7 +44,7 @@ namespace reWZ.WZProperties
     }
 
     /// <summary>
-    /// A "Convex" property, containing multiple nameless WZ properties.
+    ///   A "Convex" property, containing multiple nameless WZ properties.
     /// </summary>
     public class WZConvexProperty : WZProperty<WZNothing>
     {

@@ -31,6 +31,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using reWZ.WZProperties;
@@ -62,13 +63,7 @@ namespace reWZ
             _image = container;
             _reader = r;
             _offset = r.BaseStream.Position;
-            if (File._parseAll) {
-                _value = Parse(r, false);
-                _parsed = true;
-            } else {
-                _value = default(T);
-                Parse(r, true);
-            }
+            _parsed = Parse(r, true, out _value);
         }
 
         /// <summary>
@@ -80,11 +75,10 @@ namespace reWZ
             {
                 if (!_parsed) {
                     lock (File)
-                        _value = _reader.PeekFor(() => {
+                        _parsed = _reader.PeekFor(() => {
                                                      _reader.Seek(_offset);
-                                                     return Parse(_reader, false);
+                                                     return Parse(_reader, false, out _value);
                                                  });
-                    _parsed = true;
                 }
                 return _value;
             }
@@ -98,7 +92,7 @@ namespace reWZ
             get { return _image; }
         }
 
-        internal virtual T Parse(WZBinaryReader r, bool initial)
+        internal virtual bool Parse(WZBinaryReader r, bool initial, out T result)
         {
             throw new NotSupportedException("This is not supposed to happen.");
         }
@@ -109,7 +103,7 @@ namespace reWZ
     /// </summary>
     public abstract class WZObject : IEnumerable<WZObject>
     {
-        private readonly Dictionary<String, WZObject> _backing;
+        private readonly ChildCollection _backing;
         private readonly bool _canContainChildren;
         private readonly WZFile _file;
         private readonly string _name;
@@ -123,7 +117,7 @@ namespace reWZ
             _path = null;
             _file = container;
             _canContainChildren = children;
-            if (_canContainChildren) _backing = new Dictionary<string, WZObject>();
+            if (_canContainChildren) _backing = new ChildCollection();
         }
 
         /// <summary>
@@ -168,13 +162,13 @@ namespace reWZ
             get
             {
                 ChildrenCheck();
-                if (!_backing.ContainsKey(childName)) throw new KeyNotFoundException("No such child in WZDirectory.");
+                if (!_backing.Contains(childName)) throw new KeyNotFoundException("No such child in WZDirectory.");
                 return _backing[childName];
             }
         }
 
         /// <summary>
-        /// Returns the number of children this property contains.
+        ///   Returns the number of children this property contains.
         /// </summary>
         public virtual int ChildCount
         {
@@ -183,16 +177,6 @@ namespace reWZ
                 if (!_canContainChildren) return 0;
                 return _backing.Count;
             }
-        }
-
-        /// <summary>
-        /// Checks if this property has a child with name <paramref name="name"/>.
-        /// </summary>
-        /// <param name="name">The name of the child to locate.</param>
-        /// <returns>true if this property has such a child, false otherwise or if this property cannot contain children.</returns>
-        public virtual bool HasChild(string name)
-        {
-            return _canContainChildren && _backing.ContainsKey(name);
         }
 
         #region IEnumerable<WZObject> Members
@@ -204,16 +188,25 @@ namespace reWZ
         public IEnumerator<WZObject> GetEnumerator()
         {
             ChildrenCheck();
-            return _backing.Values.GetEnumerator();
+            return _backing.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            ChildrenCheck();
             return GetEnumerator();
         }
 
         #endregion
+
+        /// <summary>
+        ///   Checks if this property has a child with name <paramref name="name" /> .
+        /// </summary>
+        /// <param name="name"> The name of the child to locate. </param>
+        /// <returns> true if this property has such a child, false otherwise or if this property cannot contain children. </returns>
+        public virtual bool HasChild(string name)
+        {
+            return _canContainChildren && _backing.Contains(name);
+        }
 
         /// <summary>
         ///   Tries to cast this to a <see cref="WZProperty{T}" /> and returns its value, or throws an exception if the cast is invalid.
@@ -254,7 +247,7 @@ namespace reWZ
         internal void Add(WZObject o)
         {
             ChildrenCheck();
-            _backing.Add(o.Name, o);
+            _backing.Add(o);
         }
 
         private string ConstructPath()
@@ -271,6 +264,21 @@ namespace reWZ
         {
             if (!_canContainChildren) throw new NotSupportedException("This WZObject cannot contain children.");
         }
+
+        #region Nested type: ChildCollection
+
+        private class ChildCollection : KeyedCollection<String, WZObject>
+        {
+            internal ChildCollection() : base(null, 3)
+            {}
+
+            protected override string GetKeyForItem(WZObject item)
+            {
+                return item.Name;
+            }
+        }
+
+        #endregion
     }
 
     internal static class WZExtendedParser
@@ -308,7 +316,7 @@ namespace reWZ
                             r.Skip(blockLen);
                             break;
                         default:
-                            throw new Exception("Unknown property type at ParsePropertyList");
+                            return WZFile.Die<List<WZObject>>("Unknown property type at ParsePropertyList");
                     }
                 }
                 return ret;

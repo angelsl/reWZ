@@ -47,8 +47,13 @@ namespace reWZ.WZProperties
             : base(name, parent, br, container, true)
         {}
 
-        internal override Bitmap Parse(WZBinaryReader br, bool initial)
+        internal override bool Parse(WZBinaryReader br, bool initial, out Bitmap result)
         {
+            bool skip = (File._flag.IsSet(WZReadSelection.NeverParseCanvas)), eager = (File._flag.IsSet(WZReadSelection.EagerParseCanvas));
+            if (skip && eager) {
+                result = null;
+                return WZFile.Die<bool>("Both NeverParseCanvas and EagerParseCanvas are set.");
+            }
             br.Skip(1);
             if (br.ReadByte() == 1) {
                 br.Skip(2);
@@ -61,17 +66,16 @@ namespace reWZ.WZProperties
             int format2 = br.ReadByte(); // format 2
             br.Skip(4);
             int blockLen = br.ReadInt32();
-            if (initial) br.Skip(blockLen); // block Len & png data
+            if ((initial || skip) && !eager) br.Skip(blockLen); // block Len & png data
             else {
-                byte n = br.ReadByte();
+                br.Skip(1);
                 ushort header = br.PeekFor(() => br.ReadUInt16());
-                Debug.Assert((n != 0) == (header != 0x9C78 && header != 0xDA78));
-                //Debug.Assert(n == 0);
-                //if(n!=0) Console.Write("{N != 0}");
                 byte[] pngData = br.ReadBytes(blockLen - 1);
-                return ParsePNG(width, height, format1 + format2, (header != 0x9C78 && header != 0xDA78) ? DecryptPNG(pngData) : pngData);
+                result = ParsePNG(width, height, format1 + format2, (header != 0x9C78 && header != 0xDA78) ? DecryptPNG(pngData) : pngData);
+                return true;
             }
-            return null;
+            result = null;
+            return skip;
         }
 
         private byte[] DecryptPNG(byte[] @in)
@@ -99,20 +103,18 @@ namespace reWZ.WZProperties
 
             switch (format) {
                 case 1:
-                    byte[] argb = new byte[width * height * 4];
-                    fixed (byte* r = argb, t = dec)
-                    {
+                    byte[] argb = new byte[width*height*4];
+                    fixed (byte* r = argb, t = dec) {
                         byte* s = r, u = t;
-                        for (int i = 0; i < dec.Length; i++)
-                        {
-                            *(s++) = (byte)(((*u) & 0x0F) * 0x11);
-                            *(s++) = (byte)(((*(u++) & 0xF0) >> 4) * 0x11);
+                        for (int i = 0; i < dec.Length; i++) {
+                            *(s++) = (byte)(((*u) & 0x0F)*0x11);
+                            *(s++) = (byte)(((*(u++) & 0xF0) >> 4)*0x11);
                         }
                     }
                     dec = argb;
                     goto case 2;
                 case 2:
-                    if (dec.Length != width * height * 4) {
+                    if (dec.Length != width*height*4) {
                         Debug.WriteLine("Warning; dec.Length != 4wh; 32BPP");
                         byte[] proper = new byte[width*height*4];
                         Buffer.BlockCopy(dec, 0, proper, 0, Math.Min(proper.Length, dec.Length));
@@ -120,7 +122,7 @@ namespace reWZ.WZProperties
                     }
                     return new Bitmap(width, height, width << 2, PixelFormat.Format32bppArgb, GCHandle.Alloc(dec, GCHandleType.Pinned).AddrOfPinnedObject());
                 case 513:
-                    if (dec.Length != width * height * 2) {
+                    if (dec.Length != width*height*2) {
                         Debug.WriteLine("Warning; dec.Length != 2wh; 16BPP");
                         byte[] proper = new byte[width*height*2];
                         Buffer.BlockCopy(dec, 0, proper, 0, Math.Min(proper.Length, dec.Length));

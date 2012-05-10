@@ -85,43 +85,42 @@ namespace reWZ
 
         private static byte[] GenerateKey(byte[] iv, byte[] aesKey)
         {
-            using(MemoryStream memStream = new MemoryStream(0x10000))
-            using (AesManaged aem = new AesManaged { KeySize = 256, Key = aesKey, Mode = CipherMode.ECB })
-            using(CryptoStream cStream = new CryptoStream(memStream, aem.CreateEncryptor(), CryptoStreamMode.Write))
-            {
+            using (MemoryStream memStream = new MemoryStream(0x10000))
+            using (AesManaged aem = new AesManaged {KeySize = 256, Key = aesKey, Mode = CipherMode.ECB})
+            using (CryptoStream cStream = new CryptoStream(memStream, aem.CreateEncryptor(), CryptoStreamMode.Write)) {
                 cStream.Write(iv, 0, 16);
                 for (int i = 0; i < (0x10000 - 16); i += 16)
                     cStream.Write(memStream.GetBuffer(), i, 16);
                 cStream.Flush();
                 return memStream.ToArray();
-            } 
+            }
         }
 
         internal string DecryptASCIIString(byte[] asciiBytes, bool encrypted = true)
         {
             if (asciiBytes.Length > _asciiEncKey.Length)
                 throw new NotSupportedException(String.Format("Cannot decrypt ASCII string longer than {0} characters. Please report this!", _asciiEncKey.Length));
-            StringBuilder ret = new StringBuilder(asciiBytes.Length);
+            char[] ret = new char[asciiBytes.Length];
             byte[] key = encrypted ? _asciiEncKey : _asciiKey;
             for (int i = 0; i < asciiBytes.Length; ++i)
-                ret.Append((char)(asciiBytes[i] ^ key[i]));
-            return ret.ToString();
+                ret[i] = ((char)(asciiBytes[i] ^ key[i]));
+            return new string(ret);
         }
 
         internal string DecryptUnicodeString(ushort[] ushortChars, bool encrypted = true)
         {
             if (ushortChars.Length > _unicodeEncKey.Length)
                 throw new NotSupportedException(String.Format("Cannot decrypt UTF-16 string longer than {0} characters. Please report this!", _unicodeEncKey.Length));
-            StringBuilder ret = new StringBuilder(_unicodeEncKey.Length);
+            char[] ret = new char[ushortChars.Length];
             ushort[] key = encrypted ? _unicodeEncKey : _unicodeKey;
             for (int i = 0; i < ushortChars.Length; ++i)
-                ret.Append((char)(ushortChars[i] ^ key[i]));
-            return ret.ToString();
+                ret[i] = ((char)(ushortChars[i] ^ key[i]));
+            return new string(ret);
         }
 
         internal unsafe byte[] DecryptBytes(byte[] bytes)
         {
-            fixed(byte* c = bytes, k = _wzKey) {
+            fixed (byte* c = bytes, k = _wzKey) {
                 byte* d = c, l = k;
                 for (int i = 0; i < bytes.Length; ++i)
                     *(d++) ^= *(l++);
@@ -131,52 +130,62 @@ namespace reWZ
     }
 
     /// <summary>
-    /// This enum is used to specify the WZ key to be used.
+    ///   This enum is used to specify the WZ key to be used.
     /// </summary>
     public enum WZVariant
     {
         /// <summary>
-        /// MapleStory SEA
+        ///   MapleStory SEA
         /// </summary>
         MSEA = 0,
+
         /// <summary>
-        /// Korea MapleStory
+        ///   Korea MapleStory
         /// </summary>
         KMS = 0,
+
         /// <summary>
-        /// Korea MapleStory (Tespia)
+        ///   Korea MapleStory (Tespia)
         /// </summary>
         KMST = 0,
+
         /// <summary>
-        /// Japan MapleStory
+        ///   Japan MapleStory
         /// </summary>
         JMS = 0,
+
         /// <summary>
-        /// Japan MapleStory (Tespia)
+        ///   Japan MapleStory (Tespia)
         /// </summary>
         JMST = 0,
+
         /// <summary>
-        /// Europe MapleStory
+        ///   Europe MapleStory
         /// </summary>
         EMS = 0,
+
         /// <summary>
-        /// Global MapleStory
+        ///   Global MapleStory
         /// </summary>
         GMS = 1,
+
         /// <summary>
-        /// Global MapleStory (Tespia)
+        ///   Global MapleStory (Tespia)
         /// </summary>
         GMST = 1,
+
         /// <summary>
-        /// Taiwan MapleStory
+        ///   Taiwan MapleStory
         /// </summary>
         TMS = 1,
+
         /// <summary>
-        /// Brazil MapleStory
+        ///   Brazil MapleStory
         /// </summary>
         BMS = 2,
+
         /// <summary>
-        /// Classic MapleStory (Data.wz)
+        ///   Classic MapleStory (Data.wz)
         /// </summary>
         Classic = 2
     }

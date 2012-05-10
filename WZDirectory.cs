@@ -28,6 +28,8 @@
 // of the library, but you are not obligated to do so. If you do not wish to
 // do so, delete this exception statement from your version.
 
+using System.IO;
+
 namespace reWZ
 {
     /// <summary>
@@ -79,7 +81,12 @@ namespace reWZ
                                              Add(new WZDirectory(name, this, File, wzbr, woffset));
                                              break;
                                          case 4:
-                                             Add(new WZImage(name, this, File, new WZBinaryReader(File.GetSubstream(woffset, size), File._aes, wzbr.VersionHash)));
+                                             if ((File._flag.IsSet(WZReadSelection.EagerParseCanvas) || File._flag.IsSet(WZReadSelection.EagerParseMP3) || File._flag.IsSet(WZReadSelection.EagerParseStrings)) && !(File._file is MemoryStream) && !File._flag.IsSet(WZReadSelection.LowMemory))
+                                                 Add(new WZImage(name, this, File, new WZBinaryReader(File.GetSubbytes(woffset, size), File._aes, wzbr.VersionHash),
+                                                                 () => new WZBinaryReader(File.GetSubstream(woffset, size), File._aes, wzbr.VersionHash)));
+                                             else
+                                                 Add(new WZImage(name, this, File, new WZBinaryReader(File.GetSubstream(woffset, size), File._aes, wzbr.VersionHash)));
+
                                              break;
                                      }
                                  });

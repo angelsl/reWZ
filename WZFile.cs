@@ -35,10 +35,6 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 
-#if MMAP
-using System.IO.MemoryMappedFiles;
-#endif
-
 namespace reWZ
 {
     /// <summary>
@@ -48,11 +44,7 @@ namespace reWZ
     {
         internal readonly WZAES _aes;
         internal readonly bool _encrypted;
-#if MMAP
-        private readonly MemoryMappedFile _file;
-#else
-        private readonly Stream _file;
-#endif
+        internal readonly Stream _file;
         private readonly WZBinaryReader _r;
         internal readonly WZVariant _variant;
         private bool _disposed;
@@ -68,23 +60,9 @@ namespace reWZ
         /// <param name="encrypted"> Whether the WZ file is encrypted outside a WZ image. </param>
         /// <param name="flag"> WZ parsing flags. </param>
         public WZFile(string path, WZVariant variant, bool encrypted, WZReadSelection flag = WZReadSelection.None)
-#if MMAP
-            : this(MemoryMappedFile.CreateFromFile(path, FileMode.Open), variant, encrypted, flag)                       
-#else
             : this(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 6144, FileOptions.RandomAccess), variant, encrypted, flag)
-#endif
         {}
 
-#if MMAP
-    /// <summary>
-    ///   Creates and loads a WZ file.
-    /// </summary>
-    /// <param name="input"> The memory-mapped file containing the WZ file. </param>
-    /// <param name="variant"> The variant of this WZ file. </param>
-    /// <param name="encrypted"> Whether the WZ file is encrypted outside a WZ image. </param>
-    /// <param name="flag"> WZ parsing flags. </param>
-        public WZFile(MemoryMappedFile input, WZVariant variant, bool encrypted, WZReadSelection flag = WZReadSelection.None)
-#else
         /// <summary>
         ///   Creates and loads a WZ file.
         /// </summary>
@@ -93,18 +71,13 @@ namespace reWZ
         /// <param name="encrypted"> Whether the WZ file is encrypted outside a WZ image. </param>
         /// <param name="flag"> WZ parsing flags. </param>
         public WZFile(Stream input, WZVariant variant, bool encrypted, WZReadSelection flag = WZReadSelection.None)
-#endif
         {
             _file = input;
             _variant = variant;
             _encrypted = encrypted;
             _flag = flag;
             _aes = new WZAES(_variant);
-#if MMAP
-            _r = new WZBinaryReader(_file.CreateViewStream(), _aes, 0);
-#else
             _r = new WZBinaryReader(_file, _aes, 0);
-#endif
             Parse();
         }
 
@@ -214,13 +187,19 @@ namespace reWZ
             _r.Seek(_fstart);
         }
 
+        internal Stream GetSubbytes(long offset, long length)
+        {
+            byte[] @out = new byte[length];
+            long p = _file.Position;
+            _file.Position = offset;
+            _file.Read(@out, 0, (int)length);
+            _file.Position = p;
+            return new MemoryStream(@out, false);
+        }
+
         internal Stream GetSubstream(long offset, long length)
         {
-#if MMAP
-            return _file.CreateViewStream(offset, length);
-#else
             return new Substream(_file, offset, length);
-#endif
         }
 
         internal static T Die<T>(string cause)
@@ -267,15 +246,10 @@ namespace reWZ
         /// <summary>
         /// Set this flag to disable lazy loading of WZ images.
         /// </summary>
-        EagerParseImage = 16
-    }
-
-    internal static class Util
-    {
-        internal static bool IsSet(this WZReadSelection options, WZReadSelection flag)
-        {
-            return (options & flag) == flag;
-        }
-
+        EagerParseImage = 16,
+        /// <summary>
+        /// Set this flag to disable reading entire WZ images into memory when any of the eager load flags are set.
+        /// </summary>
+        LowMemory = 32
     }
 }

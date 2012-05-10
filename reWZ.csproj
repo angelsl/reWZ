@@ -49,6 +49,7 @@
     <Reference Include="System.Drawing" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Util.cs" />
     <Compile Include="WZAES.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WZBinaryReader.cs" />

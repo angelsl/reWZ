@@ -28,6 +28,8 @@
 // of the library, but you are not obligated to do so. If you do not wish to
 // do so, delete this exception statement from your version.
 
+using System;
+
 namespace reWZ
 {
     /// <summary>
@@ -35,13 +37,15 @@ namespace reWZ
     /// </summary>
     public sealed class WZImage : WZObject
     {
-        private readonly WZBinaryReader _r;
+        private WZBinaryReader _r;
         internal bool _encrypted;
         private bool _parsed;
+        private Func<WZBinaryReader> _transform;
 
-        internal WZImage(string name, WZObject parent, WZFile file, WZBinaryReader reader) : base(name, parent, file, true)
+        internal WZImage(string name, WZObject parent, WZFile file, WZBinaryReader reader, Func<WZBinaryReader> trans = null) : base(name, parent, file, true)
         {
             _r = reader;
+            _transform = trans;
             if (file._flag.IsSet(WZReadSelection.EagerParseImage)) Parse();
         }
 
@@ -96,6 +100,12 @@ namespace reWZ
                 if (_r.ReadUInt16() != 0) WZFile.Die("WZImage with invalid header (no zero UInt16!)");
                 WZExtendedParser.ParsePropertyList(_r, this, this, _encrypted).ForEach(Add);
                 _parsed = true;
+                if (_transform != null) { 
+                    _r.Close();
+                    _r = _transform();
+                    _transform = null;
+                }
+                
             }
         }
     }

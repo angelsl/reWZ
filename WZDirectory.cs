@@ -1,4 +1,6 @@
-﻿// This file is part of reWZ.
+﻿// reWZ is copyright angelsl, 2011 to 2012 inclusive.
+// 
+// This file is part of reWZ.
 // 
 // reWZ is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,7 +29,6 @@
 // If you modify this library, you may extend this exception to your version
 // of the library, but you are not obligated to do so. If you do not wish to
 // do so, delete this exception statement from your version.
-
 using System.IO;
 
 namespace reWZ
@@ -35,7 +36,7 @@ namespace reWZ
     /// <summary>
     ///   A directory in a WZ file. This cannot be located inside an Image file.
     /// </summary>
-    public class WZDirectory : WZObject
+    public sealed class WZDirectory : WZObject
     {
         internal WZDirectory(string name, WZObject parent, WZFile file, WZBinaryReader wzbr, long offset) : base(name, parent, file, true)
         {
@@ -44,7 +45,7 @@ namespace reWZ
 
         private void Parse(WZBinaryReader wzbr, long offset)
         {
-            lock (File) {
+            lock (File._lock) {
                 wzbr.Seek(offset);
                 int entryCount = wzbr.ReadWZInt();
                 for (int i = 0; i < entryCount; ++i) {

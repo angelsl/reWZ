@@ -1,4 +1,6 @@
-﻿// This file is part of reWZ.
+﻿// reWZ is copyright angelsl, 2011 to 2012 inclusive.
+// 
+// This file is part of reWZ.
 // 
 // reWZ is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,7 +29,6 @@
 // If you modify this library, you may extend this exception to your version
 // of the library, but you are not obligated to do so. If you do not wish to
 // do so, delete this exception statement from your version.
-
 using System;
 
 namespace reWZ
@@ -37,9 +38,9 @@ namespace reWZ
     /// </summary>
     public sealed class WZImage : WZObject
     {
-        private WZBinaryReader _r;
         internal bool _encrypted;
         private bool _parsed;
+        private WZBinaryReader _r;
         private Func<WZBinaryReader> _transform;
 
         internal WZImage(string name, WZObject parent, WZFile file, WZBinaryReader reader, Func<WZBinaryReader> trans = null) : base(name, parent, file, true)
@@ -89,7 +90,7 @@ namespace reWZ
         private void Parse()
         {
             if (_parsed) return;
-            lock (File) {
+            lock (File._lock) {
                 _r.Seek(0);
                 if (_r.ReadByte() != 0x73) WZFile.Die("WZImage with invalid header (not beginning with 0x73!)");
                 if ((int)File._variant == 2) _encrypted = false;
@@ -100,12 +101,11 @@ namespace reWZ
                 if (_r.ReadUInt16() != 0) WZFile.Die("WZImage with invalid header (no zero UInt16!)");
                 WZExtendedParser.ParsePropertyList(_r, this, this, _encrypted).ForEach(Add);
                 _parsed = true;
-                if (_transform != null) { 
+                if (_transform != null) {
                     _r.Close();
                     _r = _transform();
                     _transform = null;
                 }
-                
             }
         }
     }

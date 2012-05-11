@@ -1,4 +1,6 @@
-﻿// This file is part of reWZ.
+﻿// reWZ is copyright angelsl, 2011 to 2012 inclusive.
+// 
+// This file is part of reWZ.
 // 
 // reWZ is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,7 +29,6 @@
 // If you modify this library, you may extend this exception to your version
 // of the library, but you are not obligated to do so. If you do not wish to
 // do so, delete this exception statement from your version.
-
 using System.Globalization;
 
 namespace reWZ.WZProperties
@@ -35,7 +36,7 @@ namespace reWZ.WZProperties
     /// <summary>
     ///   A directory in a WZ image. This cannot be located outside an image.
     /// </summary>
-    public class WZSubProperty : WZProperty<WZNothing>
+    public sealed class WZSubProperty : WZProperty<WZNothing>
     {
         internal WZSubProperty(string name, WZObject parent, WZBinaryReader r, WZImage container) : base(name, parent, default(WZNothing), container, true)
         {
@@ -46,7 +47,7 @@ namespace reWZ.WZProperties
     /// <summary>
     ///   A "Convex" property, containing multiple nameless WZ properties.
     /// </summary>
-    public class WZConvexProperty : WZProperty<WZNothing>
+    public sealed class WZConvexProperty : WZProperty<WZNothing>
     {
         internal WZConvexProperty(string name, WZObject parent, WZBinaryReader r, WZImage container)
             : base(name, parent, default(WZNothing), container, true)

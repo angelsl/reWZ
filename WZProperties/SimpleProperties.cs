@@ -1,4 +1,6 @@
-﻿// This file is part of reWZ.
+﻿// reWZ is copyright angelsl, 2011 to 2012 inclusive.
+// 
+// This file is part of reWZ.
 // 
 // reWZ is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,7 +29,6 @@
 // If you modify this library, you may extend this exception to your version
 // of the library, but you are not obligated to do so. If you do not wish to
 // do so, delete this exception statement from your version.
-
 using System;
 using System.Drawing;
 using System.Linq;
@@ -43,7 +44,7 @@ namespace reWZ.WZProperties
     /// <summary>
     ///   Null.
     /// </summary>
-    public class WZNullProperty : WZProperty<WZNothing>
+    public sealed class WZNullProperty : WZProperty<WZNothing>
     {
         internal WZNullProperty(string name, WZObject parent, WZImage container) : base(name, parent, default(WZNothing), container, false)
         {}
@@ -52,7 +53,7 @@ namespace reWZ.WZProperties
     /// <summary>
     ///   An unsigned 16-bit integer property.
     /// </summary>
-    public class WZUInt16Property : WZProperty<ushort>
+    public sealed class WZUInt16Property : WZProperty<ushort>
     {
         internal WZUInt16Property(string name, WZObject parent, WZBinaryReader reader, WZImage container)
             : base(name, parent, reader.ReadUInt16(), container, false)
@@ -62,7 +63,7 @@ namespace reWZ.WZProperties
     /// <summary>
     ///   A compressed signed 32-bit integer property.
     /// </summary>
-    public class WZInt32Property : WZProperty<int>
+    public sealed class WZInt32Property : WZProperty<int>
     {
         internal WZInt32Property(string name, WZObject parent, WZBinaryReader reader, WZImage container)
             : base(name, parent, reader.ReadWZInt(), container, false)
@@ -72,7 +73,7 @@ namespace reWZ.WZProperties
     /// <summary>
     ///   A floating point number with single precision property.
     /// </summary>
-    public class WZSingleProperty : WZProperty<Single>
+    public sealed class WZSingleProperty : WZProperty<Single>
     {
         internal WZSingleProperty(string name, WZObject parent, WZBinaryReader reader, WZImage container)
             : base(name, parent, ReadSingle(reader), container, false)
@@ -88,7 +89,7 @@ namespace reWZ.WZProperties
     /// <summary>
     ///   A floating point number with double precision property.
     /// </summary>
-    public class WZDoubleProperty : WZProperty<Double>
+    public sealed class WZDoubleProperty : WZProperty<Double>
     {
         internal WZDoubleProperty(string name, WZObject parent, WZBinaryReader reader, WZImage container)
             : base(name, parent, reader.ReadDouble(), container, false)
@@ -98,7 +99,7 @@ namespace reWZ.WZProperties
     /// <summary>
     ///   A string property.
     /// </summary>
-    public class WZStringProperty : WZProperty<String>
+    public sealed class WZStringProperty : WZProperty<String>
     {
         internal WZStringProperty(string name, WZObject parent, WZBinaryReader reader, WZImage container)
             : base(name, parent, reader, container, false)
@@ -119,7 +120,7 @@ namespace reWZ.WZProperties
     /// <summary>
     ///   A point property, containing an X and Y value pair.
     /// </summary>
-    public class WZPointProperty : WZProperty<Point>
+    public sealed class WZPointProperty : WZProperty<Point>
     {
         internal WZPointProperty(string name, WZObject parent, WZBinaryReader wzbr, WZImage container)
             : base(name, parent, new Point(wzbr.ReadWZInt(), wzbr.ReadWZInt()), container, false)
@@ -129,7 +130,7 @@ namespace reWZ.WZProperties
     /// <summary>
     ///   A link property, used to link to other properties in the WZ file.
     /// </summary>
-    public class WZUOLProperty : WZProperty<String>
+    public sealed class WZUOLProperty : WZProperty<String>
     {
         internal WZUOLProperty(string name, WZObject parent, WZBinaryReader reader, WZImage container)
             : base(name, parent, reader.ReadWZStringBlock(container._encrypted), container, false)
@@ -160,7 +161,7 @@ namespace reWZ.WZProperties
     /// <summary>
     ///   A sound property.
     /// </summary>
-    public class WZMP3Property : WZProperty<byte[]>
+    public sealed class WZMP3Property : WZProperty<byte[]>
     {
         internal WZMP3Property(string name, WZObject parent, WZBinaryReader r, WZImage container)
             : base(name, parent, r, container, false)

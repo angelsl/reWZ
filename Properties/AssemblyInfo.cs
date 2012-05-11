@@ -1,4 +1,6 @@
-﻿// This file is part of reWZ.
+﻿// reWZ is copyright angelsl, 2011 to 2012 inclusive.
+// 
+// This file is part of reWZ.
 // 
 // reWZ is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,7 +29,6 @@
 // If you modify this library, you may extend this exception to your version
 // of the library, but you are not obligated to do so. If you do not wish to
 // do so, delete this exception statement from your version.
-
 using System.Reflection;
 using System.Runtime.InteropServices;
 

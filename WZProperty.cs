@@ -1,4 +1,6 @@
-﻿// This file is part of reWZ.
+﻿// reWZ is copyright angelsl, 2011 to 2012 inclusive.
+// 
+// This file is part of reWZ.
 // 
 // reWZ is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,7 +29,6 @@
 // If you modify this library, you may extend this exception to your version
 // of the library, but you are not obligated to do so. If you do not wish to
 // do so, delete this exception statement from your version.
-
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -63,7 +64,8 @@ namespace reWZ
             _image = container;
             _reader = r;
             _offset = r.BaseStream.Position;
-            _parsed = Parse(r, true, out _value);
+            lock (File._lock)
+                _parsed = Parse(r, true, out _value);
         }
 
         /// <summary>
@@ -73,13 +75,12 @@ namespace reWZ
         {
             get
             {
-                if (!_parsed) {
-                    lock (File)
+                if (!_parsed)
+                    lock (File._lock)
                         _parsed = _reader.PeekFor(() => {
-                                                     _reader.Seek(_offset);
-                                                     return Parse(_reader, false, out _value);
-                                                 });
-                }
+                                                      _reader.Seek(_offset);
+                                                      return Parse(_reader, false, out _value);
+                                                  });
                 return _value;
             }
         }
@@ -285,7 +286,7 @@ namespace reWZ
     {
         internal static List<WZObject> ParsePropertyList(WZBinaryReader r, WZObject parent, WZImage f, bool encrypted)
         {
-            lock (f.File) {
+            lock (f.File._lock) {
                 int num = r.ReadWZInt();
                 List<WZObject> ret = new List<WZObject>(num);
                 for (int i = 0; i < num; ++i) {
@@ -325,7 +326,7 @@ namespace reWZ
 
         internal static WZObject ParseExtendedProperty(string name, WZBinaryReader r, WZObject parent, WZImage f, bool encrypted)
         {
-            lock (f.File) {
+            lock (f.File._lock) {
                 string type = r.ReadWZStringBlock(encrypted);
                 switch (type) {
                     case "Property":

@@ -1,4 +1,6 @@
-﻿// This file is part of reWZ.
+﻿// reWZ is copyright angelsl, 2011 to 2012 inclusive.
+// 
+// This file is part of reWZ.
 // 
 // reWZ is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,13 +29,10 @@
 // If you modify this library, you may extend this exception to your version
 // of the library, but you are not obligated to do so. If you do not wish to
 // do so, delete this exception statement from your version.
-
 using System;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 
 namespace reWZ
 {
@@ -45,12 +44,13 @@ namespace reWZ
         internal readonly WZAES _aes;
         internal readonly bool _encrypted;
         internal readonly Stream _file;
+        internal readonly WZReadSelection _flag;
         private readonly WZBinaryReader _r;
         internal readonly WZVariant _variant;
         private bool _disposed;
         internal uint _fstart;
+        internal object _lock = new object();
         private WZDirectory _maindir;
-        internal WZReadSelection _flag;
 
         /// <summary>
         ///   Creates and loads a WZ file.
@@ -119,7 +119,7 @@ namespace reWZ
 
         private void Parse()
         {
-            lock (this) {
+            lock (_lock) {
                 if (_r.ReadASCIIString(4) != "PKG1") Die("WZ file has invalid header; file does not have magic \"PKG1\".");
                 _r.Skip(8);
                 _fstart = _r.ReadUInt32();
@@ -214,41 +214,48 @@ namespace reWZ
     }
 
     /// <summary>
-    /// WZ reading flags.
+    ///   WZ reading flags.
     /// </summary>
     [Flags]
     public enum WZReadSelection : byte
     {
         /// <summary>
-        /// No flags are enabled, that is, lazy loading of properties and WZ images is enabled.
+        ///   No flags are enabled, that is, lazy loading of properties and WZ images is enabled.
         /// </summary>
         None = 0,
+
         /// <summary>
-        /// Set this flag to disable lazy loading of string properties.
+        ///   Set this flag to disable lazy loading of string properties.
         /// </summary>
         EagerParseStrings = 1,
+
         /// <summary>
-        /// Set this flag to disable lazy loading of MP3 properties.
+        ///   Set this flag to disable lazy loading of MP3 properties.
         /// </summary>
         EagerParseMP3 = 2,
+
         /// <summary>
-        /// Set this flag to disable lazy loading of canvas properties.
+        ///   Set this flag to disable lazy loading of canvas properties.
         /// </summary>
         EagerParseCanvas = 4,
+
         /// <summary>
-        /// Set this flag to completely disable loading of canvas properties.
+        ///   Set this flag to completely disable loading of canvas properties.
         /// </summary>
         NeverParseCanvas = 8,
+
         /// <summary>
-        /// Set this flag to disable lazy loading of string, MP3 and canvas properties.
+        ///   Set this flag to disable lazy loading of string, MP3 and canvas properties.
         /// </summary>
         EagerParseAll = EagerParseCanvas | EagerParseMP3 | EagerParseStrings,
+
         /// <summary>
-        /// Set this flag to disable lazy loading of WZ images.
+        ///   Set this flag to disable lazy loading of WZ images.
         /// </summary>
         EagerParseImage = 16,
+
         /// <summary>
-        /// Set this flag to disable reading entire WZ images into memory when any of the eager load flags are set.
+        ///   Set this flag to disable reading entire WZ images into memory when any of the eager load flags are set.
         /// </summary>
         LowMemory = 32
     }

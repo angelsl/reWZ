@@ -177,8 +177,7 @@ namespace reWZ
             switch (ReadByte()) {
                 case 0:
                 case 0x73:
-                    int length = ReadSByte();
-                    Skip((length >= 0) ? (length == 127 ? ReadInt32() : length)*2 : length == -128 ? ReadInt32() : -length);
+                    SkipWZString();
                     return;
                 case 1:
                 case 0x1B:
@@ -188,6 +187,12 @@ namespace reWZ
                     WZFile.Die("Unknown string type in string block!");
                     return;
             }
+        }
+
+        internal void SkipWZString()
+        {
+            int length = ReadSByte();
+            Skip((length >= 0) ? (length == 127 ? ReadInt32() : length) * 2 : length == -128 ? ReadInt32() : -length);
         }
 
         /// <summary>

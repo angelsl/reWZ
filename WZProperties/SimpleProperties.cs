@@ -108,7 +108,7 @@ namespace reWZ.WZProperties
         internal override bool Parse(WZBinaryReader r, bool initial, out string result)
         {
             if (!initial || File._flag.IsSet(WZReadSelection.EagerParseStrings)) {
-                result = r.ReadWZStringBlock(Image._encrypted);
+                result = String.Intern(r.ReadWZStringBlock(Image._encrypted));
                 return true;
             }
             r.SkipWZStringBlock();
@@ -133,7 +133,7 @@ namespace reWZ.WZProperties
     public sealed class WZUOLProperty : WZProperty<String>
     {
         internal WZUOLProperty(string name, WZObject parent, WZBinaryReader reader, WZImage container)
-            : base(name, parent, reader.ReadWZStringBlock(container._encrypted), container, false)
+            : base(name, parent, String.Intern(reader.ReadWZStringBlock(container._encrypted)), container, false)
         {}
 
         /// <summary>

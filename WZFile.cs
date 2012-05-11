@@ -152,7 +152,7 @@ namespace reWZ
                         break;
                     case 3:
                     case 4:
-                        _r.ReadWZString();
+                        _r.SkipWZString();
                         break;
                     default:
                         Die("Unknown object type in WzDirectory.");

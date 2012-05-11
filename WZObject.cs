@@ -51,7 +51,7 @@ namespace reWZ
 
         internal WZObject(string name, WZObject parent, WZFile container, bool children)
         {
-            _name = name;
+            _name = String.Intern(name);
             _parent = parent;
             _file = container;
             _canContainChildren = children;

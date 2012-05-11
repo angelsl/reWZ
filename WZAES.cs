@@ -98,24 +98,26 @@ namespace reWZ
 
         internal string DecryptASCIIString(byte[] asciiBytes, bool encrypted = true)
         {
-            if (asciiBytes.Length > _asciiEncKey.Length)
+            int len = asciiBytes.Length;
+            if (len > _asciiEncKey.Length)
                 throw new NotSupportedException(String.Format("Cannot decrypt ASCII string longer than {0} characters. Please report this!", _asciiEncKey.Length));
-            char[] ret = new char[asciiBytes.Length];
+            char[] ret = new char[len];
             byte[] key = encrypted ? _asciiEncKey : _asciiKey;
-            for (int i = 0; i < asciiBytes.Length; ++i)
+            for (int i = 0; i < len; ++i)
                 ret[i] = ((char)(asciiBytes[i] ^ key[i]));
-            return String.Intern(new string(ret));
+            return new string(ret);
         }
 
         internal string DecryptUnicodeString(ushort[] ushortChars, bool encrypted = true)
         {
-            if (ushortChars.Length > _unicodeEncKey.Length)
+            int len = ushortChars.Length;
+            if (len > _unicodeEncKey.Length)
                 throw new NotSupportedException(String.Format("Cannot decrypt UTF-16 string longer than {0} characters. Please report this!", _unicodeEncKey.Length));
-            char[] ret = new char[ushortChars.Length];
+            char[] ret = new char[len];
             ushort[] key = encrypted ? _unicodeEncKey : _unicodeKey;
-            for (int i = 0; i < ushortChars.Length; ++i)
+            for (int i = 0; i < len; ++i)
                 ret[i] = ((char)(ushortChars[i] ^ key[i]));
-            return String.Intern(new string(ret));
+            return new string(ret);
         }
 
         internal unsafe byte[] DecryptBytes(byte[] bytes)

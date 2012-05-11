@@ -72,6 +72,7 @@
     <Compile Include="WZException.cs" />
     <Compile Include="WZFile.cs" />
     <Compile Include="WZImage.cs" />
+    <Compile Include="WZObject.cs" />
     <Compile Include="WZProperties\SimpleProperties.cs" />
     <Compile Include="WZProperties\WZCanvasProperty.cs" />
     <Compile Include="WZProperties\WZSubProperty.cs" />
@@ -79,11 +80,10 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>ilmerge /v2 /out:reWZ_.dll reWZ.dll DotZLib.dll
-rmdir /S /Q reWZ
+    <PostBuildEvent>rmdir /S /Q reWZ
 mkdir reWZ
-copy /V reWZ_.dll /B reWZ\reWZ.dll
-copy /V zlib1.dll /B reWZ\
+copy /V reWZ.dll /B reWZ\reWZ.dll
+copy /V reWZ.xml /B reWZ\reWZ.xml
 cd reWZ
 7z a -tzip reWZ.zip *
 copy /V reWZ.zip /B ..\..\</PostBuildEvent>

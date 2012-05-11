@@ -104,7 +104,7 @@ namespace reWZ
             byte[] key = encrypted ? _asciiEncKey : _asciiKey;
             for (int i = 0; i < asciiBytes.Length; ++i)
                 ret[i] = ((char)(asciiBytes[i] ^ key[i]));
-            return new string(ret);
+            return String.Intern(new string(ret));
         }
 
         internal string DecryptUnicodeString(ushort[] ushortChars, bool encrypted = true)
@@ -115,7 +115,7 @@ namespace reWZ
             ushort[] key = encrypted ? _unicodeEncKey : _unicodeKey;
             for (int i = 0; i < ushortChars.Length; ++i)
                 ret[i] = ((char)(ushortChars[i] ^ key[i]));
-            return new string(ret);
+            return String.Intern(new string(ret));
         }
 
         internal unsafe byte[] DecryptBytes(byte[] bytes)

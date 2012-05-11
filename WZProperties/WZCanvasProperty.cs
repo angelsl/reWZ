@@ -42,7 +42,7 @@ namespace reWZ.WZProperties
     /// <summary>
     ///   A bitmap property, containing an image, and children.
     /// </summary>
-    public sealed class WZCanvasProperty : WZProperty<Bitmap>
+    public sealed class WZCanvasProperty : WZDelayedProperty<Bitmap>
     {
         internal WZCanvasProperty(string name, WZObject parent, WZBinaryReader br, WZImage container)
             : base(name, parent, br, container, true)

@@ -99,7 +99,7 @@ namespace reWZ.WZProperties
     /// <summary>
     ///   A string property.
     /// </summary>
-    public sealed class WZStringProperty : WZProperty<String>
+    public sealed class WZStringProperty : WZDelayedProperty<String>
     {
         internal WZStringProperty(string name, WZObject parent, WZBinaryReader reader, WZImage container)
             : base(name, parent, reader, container, false)
@@ -161,7 +161,7 @@ namespace reWZ.WZProperties
     /// <summary>
     ///   A sound property.
     /// </summary>
-    public sealed class WZMP3Property : WZProperty<byte[]>
+    public sealed class WZMP3Property : WZDelayedProperty<byte[]>
     {
         internal WZMP3Property(string name, WZObject parent, WZBinaryReader r, WZImage container)
             : base(name, parent, r, container, false)

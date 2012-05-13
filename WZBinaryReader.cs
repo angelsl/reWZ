@@ -33,7 +33,11 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using DotZLib;
+
+#if !ZLIB
 using System.IO.Compression;
+#endif
 
 namespace reWZ
 {
@@ -215,17 +219,40 @@ namespace reWZ
 
         internal static byte[] Inflate(byte[] compressed)
         {
+#if ZLIB
+            Debug.WriteLine("Inflating via zlib");
+            using (Inflater d = new Inflater())
+            using (MemoryStream @out = new MemoryStream(512*1024)) {
+                d.DataAvailable += (data, index, count) => { if (@out != null) @out.Write(data, index, count); };
+                d.Add(compressed);
+                d.Finish();
+                return @out.ToArray();
+            }
+#else
             using (MemoryStream @in = new MemoryStream(compressed))
                 return Inflate(@in);
+#endif
         }
 
         internal static byte[] Inflate(Stream @in)
         {
             long length = 512*1024;
             try {
-                length = @in.Length;
+                length = Math.Max(@in.Length, length);
             } catch {}
             byte[] dec = new byte[length];
+#if ZLIB
+            Debug.WriteLine("Inflating via zlib");
+            using (Inflater d = new Inflater())
+            using (MemoryStream @out = new MemoryStream(2*dec.Length)) {
+                d.DataAvailable += (data, index, count) => @out.Write(data, index, count);
+                int len;
+                while ((len = @in.Read(dec, 0, dec.Length)) > 0)
+                    d.Add(dec, 0, len);
+                d.Finish();
+                return @out.ToArray();
+            }
+#else
             using (DeflateStream dStr = new DeflateStream(@in, CompressionMode.Decompress))
             using (MemoryStream @out = new MemoryStream(dec.Length * 2))
             {
@@ -233,6 +260,7 @@ namespace reWZ
                 while ((len = dStr.Read(dec, 0, dec.Length)) > 0) @out.Write(dec, 0, len);
                 return @out.ToArray();
             }
+#endif
         }
     }
 
@@ -336,6 +364,7 @@ namespace reWZ
             int r = _backing.ReadByte();
             ++_posInBacking;
             Debug.Assert(_posInBacking == _backing.Position);
+            //_backing.Position = origPos;
             return r;
         }
     }

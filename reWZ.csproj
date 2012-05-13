@@ -14,16 +14,35 @@
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+    <PlatformTarget>x86</PlatformTarget>
+    <OutputPath>bin\x86\Debug\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;ZLIB</DefineConstants>
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+    <PlatformTarget>x86</PlatformTarget>
+    <OutputPath>bin\x86\Release\</OutputPath>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
+    <Optimize>true</Optimize>
+    <DocumentationFile>bin\x86\Release\reWZ.XML</DocumentationFile>
+    <DefineConstants>ZLIB</DefineConstants>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <DebugType>pdbonly</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
   <PropertyGroup>
     <SignAssembly>false</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>
-    </AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>angelsl.pfx</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>bin\Any\Debug\</OutputPath>
     <DefineConstants>TRACE;DEBUG</DefineConstants>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DebugType>full</DebugType>
@@ -36,13 +55,14 @@
     <CodeAnalysisIgnoreBuiltInRuleSets>true</CodeAnalysisIgnoreBuiltInRuleSets>
     <CodeAnalysisRuleDirectories>;D:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
     <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
-    <CodeAnalysisFailOnMissingRules>false</CodeAnalysisFailOnMissingRules>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>bin\Any\Release\</OutputPath>
+    <DefineConstants>
+    </DefineConstants>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DocumentationFile>bin\Release\reWZ.XML</DocumentationFile>
+    <DocumentationFile>bin\Any\Release\reWZ.XML</DocumentationFile>
     <Optimize>true</Optimize>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <DebugType>pdbonly</DebugType>
@@ -55,8 +75,7 @@
     <CodeAnalysisRuleSetDirectories>;D:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\\Rule Sets</CodeAnalysisRuleSetDirectories>
     <CodeAnalysisIgnoreBuiltInRuleSets>true</CodeAnalysisIgnoreBuiltInRuleSets>
     <CodeAnalysisRuleDirectories>;D:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
-    <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
-    <CodeAnalysisFailOnMissingRules>false</CodeAnalysisFailOnMissingRules>
+    <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -64,6 +83,9 @@
     <Reference Include="System.Drawing" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DotZLib\CodecBase.cs" />
+    <Compile Include="DotZLib\DotZLib.cs" />
+    <Compile Include="DotZLib\Inflater.cs" />
     <Compile Include="Util.cs" />
     <Compile Include="WZAES.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -78,15 +100,29 @@
     <Compile Include="WZProperties\WZSubProperty.cs" />
     <Compile Include="WZProperty.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="zlib1.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>rmdir /S /Q reWZ
+    <PostBuildEvent>if $(ConfigurationName)==Debug exit
+rmdir /S /Q reWZ
 mkdir reWZ
+if $(PlatformName)==x86 (
+copy /V zlib1.dll /B reWZ\zlib1.dll
+)
 copy /V reWZ.dll /B reWZ\reWZ.dll
 copy /V reWZ.xml /B reWZ\reWZ.xml
 cd reWZ
-7z a -tzip reWZ.zip *
-copy /V reWZ.zip /B ..\..\</PostBuildEvent>
+if $(PlatformName)==x86 (
+7z a -tzip reWZ_x86.zip *
+copy /V reWZ_x86.zip /B ..\..\..\
+) else (
+7z a -tzip reWZ_any.zip *
+copy /V reWZ_any.zip /B ..\..\..\
+)</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

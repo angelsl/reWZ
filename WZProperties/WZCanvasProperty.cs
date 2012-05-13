@@ -42,8 +42,10 @@ namespace reWZ.WZProperties
     /// <summary>
     ///   A bitmap property, containing an image, and children.
     /// </summary>
-    public sealed class WZCanvasProperty : WZDelayedProperty<Bitmap>
+    public sealed class WZCanvasProperty : WZDelayedProperty<Bitmap>, IDisposable
     {
+        private GCHandle _gcH;
+
         internal WZCanvasProperty(string name, WZObject parent, WZBinaryReader br, WZImage container)
             : base(name, parent, br, container, true)
         {}
@@ -92,7 +94,7 @@ namespace reWZ.WZProperties
             }
         }
 
-        private static unsafe Bitmap ParsePNG(int width, int height, int format, byte[] data)
+        private unsafe Bitmap ParsePNG(int width, int height, int format, byte[] data)
         {
             byte[] dec;
 #if ZLIB
@@ -112,6 +114,7 @@ namespace reWZ.WZProperties
                             *(s++) = (byte)(((*(u++) & 0xF0) >> 4)*0x11);
                         }
                     }
+                    decLen *= 2;
                     dec = argb;
                     goto case 2;
                 case 2:
@@ -122,7 +125,8 @@ namespace reWZ.WZProperties
                         Buffer.BlockCopy(dec, 0, proper, 0, Math.Min(proper.Length, decLen));
                         dec = proper;
                     }
-                    return new Bitmap(width, height, width << 2, PixelFormat.Format32bppArgb, GCHandle.Alloc(dec, GCHandleType.Pinned).AddrOfPinnedObject());
+                    _gcH = GCHandle.Alloc(dec, GCHandleType.Pinned);
+                    return new Bitmap(width, height, width << 2, PixelFormat.Format32bppArgb, _gcH.AddrOfPinnedObject());
                 case 513:
                     if (decLen != width * height * 2)
                     {
@@ -131,7 +135,8 @@ namespace reWZ.WZProperties
                         Buffer.BlockCopy(dec, 0, proper, 0, Math.Min(proper.Length, decLen));
                         dec = proper;
                     }
-                    return new Bitmap(width, height, width << 1, PixelFormat.Format16bppRgb565, GCHandle.Alloc(dec, GCHandleType.Pinned).AddrOfPinnedObject());
+                    _gcH = GCHandle.Alloc(dec, GCHandleType.Pinned);
+                    return new Bitmap(width, height, width << 1, PixelFormat.Format16bppRgb565, _gcH.AddrOfPinnedObject());
                 case 517:
                     width >>= 4;
                     height >>= 4;
@@ -139,6 +144,17 @@ namespace reWZ.WZProperties
                 default:
                     return WZFile.Die<Bitmap>(String.Format("Unknown bitmap format {0}.", format));
             }
+        }
+
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        public void Dispose()
+        {
+            if (!_parsed) return;
+            Value.Dispose();
+            _gcH.Free();
+            _parsed = false;
         }
     }
 }

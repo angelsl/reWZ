@@ -1,3 +1,4 @@
+#if ZLIB
 //
 // © Copyright Henrik Ravn 2004
 //
@@ -103,3 +104,4 @@ namespace DotZLib
 
 	}
 }
+#endif

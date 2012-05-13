@@ -33,9 +33,9 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+#if ZLIB
 using DotZLib;
-
-#if !ZLIB
+#else
 using System.IO.Compression;
 #endif
 

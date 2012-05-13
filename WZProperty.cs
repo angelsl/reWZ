@@ -42,7 +42,10 @@ namespace reWZ
     public abstract class WZDelayedProperty<T> : WZProperty<T>
     {
         private readonly long _offset;
-        private bool _parsed;
+        /// <summary>
+        /// Whether the delayed property has been parsed.
+        /// </summary>
+        protected bool _parsed;
         private readonly WZBinaryReader _reader;
 
         internal WZDelayedProperty(string name, WZObject parent, WZBinaryReader r, WZImage container, bool children) : base(name, parent, default(T), container, children)

@@ -92,19 +92,19 @@ namespace reWZ.WZProperties
             }
         }
 
-        private unsafe Bitmap ParsePNG(int width, int height, int format, byte[] data)
+        private static unsafe Bitmap ParsePNG(int width, int height, int format, byte[] data)
         {
             byte[] dec;
 
             using (MemoryStream @in = new MemoryStream(data, 2, data.Length - 2))
                 dec = WZBinaryReader.Inflate(@in);
-
+            int decLen = dec.Length;
             switch (format) {
                 case 1:
                     byte[] argb = new byte[width*height*4];
                     fixed (byte* r = argb, t = dec) {
                         byte* s = r, u = t;
-                        for (int i = 0; i < dec.Length; i++) {
+                        for (int i = 0; i < decLen; i++) {
                             *(s++) = (byte)(((*u) & 0x0F)*0x11);
                             *(s++) = (byte)(((*(u++) & 0xF0) >> 4)*0x11);
                         }
@@ -112,18 +112,20 @@ namespace reWZ.WZProperties
                     dec = argb;
                     goto case 2;
                 case 2:
-                    if (dec.Length != width*height*4) {
+                    if (decLen != width * height * 4)
+                    {
                         Debug.WriteLine("Warning; dec.Length != 4wh; 32BPP");
                         byte[] proper = new byte[width*height*4];
-                        Buffer.BlockCopy(dec, 0, proper, 0, Math.Min(proper.Length, dec.Length));
+                        Buffer.BlockCopy(dec, 0, proper, 0, Math.Min(proper.Length, decLen));
                         dec = proper;
                     }
                     return new Bitmap(width, height, width << 2, PixelFormat.Format32bppArgb, GCHandle.Alloc(dec, GCHandleType.Pinned).AddrOfPinnedObject());
                 case 513:
-                    if (dec.Length != width*height*2) {
+                    if (decLen != width * height * 2)
+                    {
                         Debug.WriteLine("Warning; dec.Length != 2wh; 16BPP");
                         byte[] proper = new byte[width*height*2];
-                        Buffer.BlockCopy(dec, 0, proper, 0, Math.Min(proper.Length, dec.Length));
+                        Buffer.BlockCopy(dec, 0, proper, 0, Math.Min(proper.Length, decLen));
                         dec = proper;
                     }
                     return new Bitmap(width, height, width << 1, PixelFormat.Format16bppRgb565, GCHandle.Alloc(dec, GCHandleType.Pinned).AddrOfPinnedObject());

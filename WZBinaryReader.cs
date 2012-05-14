@@ -58,6 +58,11 @@ namespace reWZ
             set { _versionHash = value; }
         }
 
+        internal void Close(bool disposeStream)
+        {
+            Dispose(disposeStream);
+        }
+
         /// <summary>
         ///   Sets the position within the backing stream to the specified value.
         /// </summary>

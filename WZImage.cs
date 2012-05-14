@@ -59,6 +59,7 @@ namespace reWZ
         {
             get
             {
+                File.CheckDisposed();
                 Parse();
                 return base[childName];
             }
@@ -71,6 +72,7 @@ namespace reWZ
         {
             get
             {
+                File.CheckDisposed();
                 Parse();
                 return base.ChildCount;
             }
@@ -83,12 +85,14 @@ namespace reWZ
         /// <returns> true if this property has such a child, false otherwise or if this property cannot contain children. </returns>
         public override bool HasChild(string name)
         {
+            File.CheckDisposed();
             Parse();
             return base.HasChild(name);
         }
 
         private void Parse()
         {
+            File.CheckDisposed();
             if (_parsed) return;
             lock (File._lock) {
                 _r.Seek(0);
@@ -101,11 +105,10 @@ namespace reWZ
                 if (_r.ReadUInt16() != 0) WZFile.Die("WZImage with invalid header (no zero UInt16!)");
                 WZExtendedParser.ParsePropertyList(_r, this, this, _encrypted).ForEach(Add);
                 _parsed = true;
-                if (_transform != null) {
-                    _r.Close();
-                    _r = _transform();
-                    _transform = null;
-                }
+                if (_transform == null) return;
+                _r.Close();
+                _r = _transform();
+                _transform = null;
             }
         }
     }

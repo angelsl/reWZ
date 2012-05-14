@@ -79,7 +79,7 @@ namespace reWZ
         /// </summary>
         public string Path
         {
-            get { return  ConstructPath(); }
+            get { File.CheckDisposed(); return ConstructPath(); }
         }
 
         /// <summary>
@@ -99,6 +99,7 @@ namespace reWZ
         {
             get
             {
+                File.CheckDisposed();
                 ChildrenCheck();
                 if (!_backing.Contains(childName)) throw new KeyNotFoundException("No such child in WZDirectory.");
                 return _backing[childName];
@@ -112,8 +113,8 @@ namespace reWZ
         {
             get
             {
-                if (!_canContainChildren) return 0;
-                return _backing.Count;
+                File.CheckDisposed();
+                return _canContainChildren ? _backing.Count : 0;
             }
         }
 
@@ -125,6 +126,7 @@ namespace reWZ
         /// <returns> A <see cref="T:System.Collections.Generic.IEnumerator`1" /> that can be used to iterate through the children in this property. </returns>
         public IEnumerator<WZObject> GetEnumerator()
         {
+            File.CheckDisposed();
             ChildrenCheck();
             return _backing.GetEnumerator();
         }
@@ -143,6 +145,7 @@ namespace reWZ
         /// <returns> true if this property has such a child, false otherwise or if this property cannot contain children. </returns>
         public virtual bool HasChild(string name)
         {
+            File.CheckDisposed();
             return _canContainChildren && _backing.Contains(name);
         }
 
@@ -179,6 +182,7 @@ namespace reWZ
         /// <returns> The object located at the path. </returns>
         public WZObject ResolvePath(string path)
         {
+            File.CheckDisposed();
             return (path.StartsWith("/") ? path.Substring(1) : path).Split('/').Where(node => node != ".").Aggregate(this, (current, node) => node == ".." ? current.Parent : current[node]);
         }
 

@@ -65,6 +65,7 @@ namespace reWZ
         {
             get
             {
+                File.CheckDisposed();
                 if (!_parsed)
                     lock (File._lock)
                         _parsed = _reader.PeekFor(() =>
@@ -99,6 +100,7 @@ namespace reWZ
         {
             get
             {
+                File.CheckDisposed();
                 return _value;
             }
         }

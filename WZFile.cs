@@ -54,7 +54,7 @@ namespace reWZ
         private WZDirectory _maindir;
 
         /// <summary>
-        ///   Creates and loads a WZ file.
+        ///   Creates and loads a WZ file from a path. The Stream created will be disposed when the WZ file is disposed.
         /// </summary>
         /// <param name="path"> The path where the WZ file is located. </param>
         /// <param name="variant"> The variant of this WZ file. </param>
@@ -67,7 +67,7 @@ namespace reWZ
         }
 
         /// <summary>
-        ///   Creates and loads a WZ file.
+        ///   Creates and loads a WZ file. The Stream passed will not be closed when the WZ file is disposed.
         /// </summary>
         /// <param name="input"> The stream containing the WZ file. </param>
         /// <param name="variant"> The variant of this WZ file. </param>

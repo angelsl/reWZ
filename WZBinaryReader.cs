@@ -120,10 +120,7 @@ namespace reWZ
                 length = length == 127 ? ReadInt32() : length;
                 if (length == 0) return "";
                 byte[] rbytes = ReadBytes(length*2);
-                ushort[] raw = new ushort[length];
-                for (int i = 0; i < length; ++i)
-                    raw[i] = (ushort)(rbytes[i*2] | (uint)rbytes[i*2 + 1] << 8);
-                return _aes.DecryptUnicodeString(raw, encrypted);
+                return _aes.DecryptUnicodeString(rbytes, encrypted);
             } // !(length >= 0), i think we can assume length < 0, but the compiler can't seem to see that
             length = length == -128 ? ReadInt32() : -length;
             if (length == 0) return "";

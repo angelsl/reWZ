@@ -32,6 +32,7 @@
 using System;
 using System.IO;
 using System.Security.Cryptography;
+using System.Text;
 
 namespace reWZ
 {
@@ -44,17 +45,17 @@ namespace reWZ
 
         private readonly byte[] _asciiEncKey;
         private readonly byte[] _asciiKey;
-        private readonly ushort[] _unicodeEncKey;
-        private readonly ushort[] _unicodeKey;
+        private readonly byte[] _unicodeEncKey;
+        private readonly byte[] _unicodeKey;
         private readonly byte[] _wzKey;
 
         internal WZAES(WZVariant version)
         {
             _wzKey = GetWZKey(version);
             _asciiKey = new byte[_wzKey.Length];
-            _unicodeKey = new ushort[_wzKey.Length/2];
+            _unicodeKey = new byte[_wzKey.Length];
             _asciiEncKey = new byte[_wzKey.Length];
-            _unicodeEncKey = new ushort[_wzKey.Length/2];
+            _unicodeEncKey = new byte[_wzKey.Length];
             unchecked {
                 byte mask = 0xAA;
                 for (int i = 0; i < _wzKey.Length; ++i, ++mask) {
@@ -63,8 +64,10 @@ namespace reWZ
                 }
                 ushort umask = 0xAAAA;
                 for (int i = 0; i < _wzKey.Length/2; i += 2, ++umask) {
-                    _unicodeKey[i] = umask;
-                    _unicodeEncKey[i] = (ushort)(((_wzKey[i + 1] << 8) | _wzKey[i]) ^ umask);
+                    _unicodeKey[i] = (byte)(umask & 0xFF);
+                    _unicodeKey[i+1] = (byte)((umask & 0xFF00) >> 8);
+                    _unicodeEncKey[i] = (byte)(_wzKey[i] ^ _unicodeKey[i]);
+                    _unicodeEncKey[i + 1] = (byte)(_wzKey[i + 1] ^ _unicodeKey[i + 1]);
                 }
             }
         }
@@ -101,23 +104,23 @@ namespace reWZ
             int len = asciiBytes.Length;
             if (len > _asciiEncKey.Length)
                 throw new NotSupportedException(String.Format("Cannot decrypt ASCII string longer than {0} characters. Please report this!", _asciiEncKey.Length));
-            char[] ret = new char[len];
+            //char[] ret = new char[len];
             byte[] key = encrypted ? _asciiEncKey : _asciiKey;
             for (int i = 0; i < len; ++i)
-                ret[i] = ((char)(asciiBytes[i] ^ key[i]));
-            return new string(ret);
+                asciiBytes[i] ^= key[i];
+            return Encoding.ASCII.GetString(asciiBytes);
         }
 
-        internal string DecryptUnicodeString(ushort[] ushortChars, bool encrypted = true)
+        internal string DecryptUnicodeString(byte[] ushortChars, bool encrypted = true)
         {
             int len = ushortChars.Length;
             if (len > _unicodeEncKey.Length)
                 throw new NotSupportedException(String.Format("Cannot decrypt UTF-16 string longer than {0} characters. Please report this!", _unicodeEncKey.Length));
-            char[] ret = new char[len];
-            ushort[] key = encrypted ? _unicodeEncKey : _unicodeKey;
+            //char[] ret = new char[len];
+            byte[] key = encrypted ? _unicodeEncKey : _unicodeKey;
             for (int i = 0; i < len; ++i)
-                ret[i] = ((char)(ushortChars[i] ^ key[i]));
-            return new string(ret);
+                ushortChars[i] ^= key[i];
+            return Encoding.Unicode.GetString(ushortChars);
         }
 
         internal unsafe byte[] DecryptBytes(byte[] bytes)

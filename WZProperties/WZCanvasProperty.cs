@@ -41,6 +41,7 @@ namespace reWZ.WZProperties
 {
     /// <summary>
     ///   A bitmap property, containing an image, and children.
+    ///   Please dispose any parsed Canvas properties once they are no longer needed, and before the containing WZ file is disposed.
     /// </summary>
     public sealed class WZCanvasProperty : WZDelayedProperty<Bitmap>, IDisposable
     {
@@ -49,6 +50,14 @@ namespace reWZ.WZProperties
         internal WZCanvasProperty(string name, WZObject parent, WZBinaryReader br, WZImage container)
             : base(name, parent, br, container, true)
         {}
+
+        /// <summary>
+        /// Destructor.
+        /// </summary>
+        ~WZCanvasProperty()
+        {
+            Dispose();
+        }
 
         internal override bool Parse(WZBinaryReader br, bool initial, out Bitmap result)
         {

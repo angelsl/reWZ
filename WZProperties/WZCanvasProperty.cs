@@ -160,8 +160,8 @@ namespace reWZ.WZProperties
         /// </summary>
         public void Dispose()
         {
-            if (!_parsed) return;
-            Value.Dispose();
+            if (!_parsed || _value == null) return;
+            _value.Dispose();
             _gcH.Free();
             _parsed = false;
         }

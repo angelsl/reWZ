@@ -66,15 +66,20 @@ namespace reWZ
             get
             {
                 File.CheckDisposed();
-                if (!_parsed)
-                    lock (File._lock)
-                        _parsed = _reader.PeekFor(() =>
-                        {
-                            _reader.Seek(_offset);
-                            return Parse(_reader, false, out _value);
-                        });
-                return base.Value;
+                Parse();
+                return _value;
             }
+        }
+
+        internal void Parse()
+        {
+            if (!_parsed)
+                lock (File._lock)
+                    _parsed = _reader.PeekFor(() =>
+                    {
+                        _reader.Seek(_offset);
+                        return Parse(_reader, false, out _value);
+                    });
         }
     }
 

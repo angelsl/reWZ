@@ -41,7 +41,7 @@ using System.IO.Compression;
 
 namespace reWZ
 {
-    internal sealed class WZBinaryReader : BinaryReader
+    internal sealed class WZBinaryReader : BinaryReader, IDisposable
     {
         private readonly WZAES _aes;
         private uint _versionHash;
@@ -61,6 +61,21 @@ namespace reWZ
         internal void Close(bool disposeStream)
         {
             Dispose(disposeStream);
+        }
+
+        public override void Close()
+        {
+            base.Close();
+        }
+
+        void IDisposable.Dispose()
+        {
+            base.Dispose(true);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
         }
 
         /// <summary>

@@ -46,14 +46,12 @@ namespace reWZ
         /// Whether the delayed property has been parsed.
         /// </summary>
         protected bool _parsed;
-        private readonly WZBinaryReader _reader;
 
-        internal WZDelayedProperty(string name, WZObject parent, WZBinaryReader r, WZImage container, bool children) : base(name, parent, default(T), container, children)
+        internal WZDelayedProperty(string name, WZObject parent, WZImage container, bool children) : base(name, parent, default(T), container, children)
         {
-            _reader = r;
-            _offset = r.BaseStream.Position;
+            _offset = container._r.BaseStream.Position;
             lock (File._lock)
-                _parsed = Parse(r, true, out _value);
+                _parsed = Parse(container._r, true, out _value);
         }
 
         internal abstract bool Parse(WZBinaryReader r, bool initial, out T result);
@@ -75,10 +73,10 @@ namespace reWZ
         {
             if (!_parsed)
                 lock (File._lock)
-                    _parsed = _reader.PeekFor(() =>
+                    _parsed = Image._r.PeekFor(() =>
                     {
-                        _reader.Seek(_offset);
-                        return Parse(_reader, false, out _value);
+                        Image._r.Seek(_offset);
+                        return Parse(Image._r, false, out _value);
                     });
         }
     }
@@ -147,7 +145,7 @@ namespace reWZ
                             ret.Add(new WZDoubleProperty(name, parent, r, f));
                             break;
                         case 8:
-                            ret.Add(new WZStringProperty(name, parent, r, f));
+                            ret.Add(new WZStringProperty(name, parent, f));
                             break;
                         case 9:
                             uint blockLen = r.ReadUInt32();
@@ -177,7 +175,7 @@ namespace reWZ
                     case "Shape2D#Convex2D":
                         return new WZConvexProperty(name, parent, r, f);
                     case "Sound_DX8":
-                        return new WZMP3Property(name, parent, r, f);
+                        return new WZMP3Property(name, parent, f);
                     case "UOL":
                         r.Skip(1);
                         return new WZUOLProperty(name, parent, r, f);

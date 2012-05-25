@@ -101,8 +101,8 @@ namespace reWZ.WZProperties
     /// </summary>
     public sealed class WZStringProperty : WZDelayedProperty<String>
     {
-        internal WZStringProperty(string name, WZObject parent, WZBinaryReader reader, WZImage container)
-            : base(name, parent, reader, container, false)
+        internal WZStringProperty(string name, WZObject parent, WZImage container)
+            : base(name, parent, container, false)
         {}
 
         internal override bool Parse(WZBinaryReader r, bool initial, out string result)
@@ -163,8 +163,8 @@ namespace reWZ.WZProperties
     /// </summary>
     public sealed class WZMP3Property : WZDelayedProperty<byte[]>
     {
-        internal WZMP3Property(string name, WZObject parent, WZBinaryReader r, WZImage container)
-            : base(name, parent, r, container, false)
+        internal WZMP3Property(string name, WZObject parent, WZImage container)
+            : base(name, parent, container, false)
         {}
 
         internal override bool Parse(WZBinaryReader r, bool initial, out byte[] result)

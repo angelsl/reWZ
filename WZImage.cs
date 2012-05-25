@@ -40,7 +40,7 @@ namespace reWZ
     {
         internal bool _encrypted;
         private bool _parsed;
-        private WZBinaryReader _r;
+        internal WZBinaryReader _r;
         private Func<WZBinaryReader> _transform;
 
         internal WZImage(string name, WZObject parent, WZFile file, WZBinaryReader reader, Func<WZBinaryReader> trans = null) : base(name, parent, file, true)

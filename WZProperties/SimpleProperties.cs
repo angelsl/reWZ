@@ -161,7 +161,7 @@ namespace reWZ.WZProperties
     /// <summary>
     ///   A sound property.
     /// </summary>
-    public sealed class WZMP3Property : WZDelayedProperty<byte[]>
+    public sealed class WZMP3Property : WZDelayedProperty<byte[]>, IDisposable
     {
         internal WZMP3Property(string name, WZObject parent, WZImage container)
             : base(name, parent, container, false)
@@ -180,6 +180,16 @@ namespace reWZ.WZProperties
             r.Skip(blockLen);
             result = null;
             return false;
+        }
+
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        /// <filterpriority>2</filterpriority>
+        public void Dispose()
+        {
+            _parsed = false;
+            _value = null;
         }
     }
 }

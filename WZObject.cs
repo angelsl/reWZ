@@ -170,8 +170,8 @@ namespace reWZ
         /// <returns> The value enclosed by this WZ property, or the default value. </returns>
         public T ValueOrDefault<T>(T @default)
         {
-            if (this is WZProperty<T>) return ((WZProperty<T>)this).Value;
-            return @default;
+            WZProperty<T> ret = this as WZProperty<T>;
+            return ret != null ? ret.Value : @default;
         }
 
         /// <summary>

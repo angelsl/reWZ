@@ -35,6 +35,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
+using Assembine;
 
 namespace reWZ
 {
@@ -124,11 +125,10 @@ namespace reWZ
         ///   Returns an enumerator that iterates through the children in this property.
         /// </summary>
         /// <returns> A <see cref="T:System.Collections.Generic.IEnumerator`1" /> that can be used to iterate through the children in this property. </returns>
-        public IEnumerator<WZObject> GetEnumerator()
+        public virtual IEnumerator<WZObject> GetEnumerator()
         {
             File.CheckDisposed();
-            ChildrenCheck();
-            return _backing.GetEnumerator();
+            return _canContainChildren ? _backing.GetEnumerator() : new NullEnumerator<WZObject>();
         }
 
         IEnumerator IEnumerable.GetEnumerator()

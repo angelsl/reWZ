@@ -78,6 +78,12 @@ namespace reWZ
             }
         }
 
+        public override System.Collections.Generic.IEnumerator<WZObject> GetEnumerator()
+        {
+            File.CheckDisposed();
+            Parse();
+            return base.GetEnumerator();
+        }
         /// <summary>
         ///   Checks if this property has a child with name <paramref name="name" /> .
         /// </summary>

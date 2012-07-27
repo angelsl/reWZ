@@ -106,11 +106,7 @@ namespace reWZ.WZProperties
         private unsafe Bitmap ParsePNG(int width, int height, int format, byte[] data)
         {
             byte[] dec;
-#if ZLIB
-            using (MemoryStream @in = new MemoryStream(data, 0, data.Length))
-#else
-            using (MemoryStream @in = new MemoryStream(data, 2, data.Length - 2))
-#endif
+            using (MemoryStream @in = Util._is64bit ? new MemoryStream(data, 2, data.Length - 2) : new MemoryStream(data, 0, data.Length))
                 dec = WZBinaryReader.Inflate(@in);
             int decLen = dec.Length;
             switch (format) {

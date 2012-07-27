@@ -33,11 +33,8 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
-#if ZLIB
 using DotZLib;
-#else
 using System.IO.Compression;
-#endif
 
 namespace reWZ
 {
@@ -136,9 +133,9 @@ namespace reWZ
         private string ReadWZStringAtOffset(long offset, bool encrypted = true)
         {
             return PeekFor(() => {
-                               BaseStream.Position = offset;
-                               return ReadWZString(encrypted);
-                           });
+                BaseStream.Position = offset;
+                return ReadWZString(encrypted);
+            });
         }
 
         /// <summary>
@@ -198,7 +195,7 @@ namespace reWZ
         internal void SkipWZString()
         {
             int length = ReadSByte();
-            Skip((length >= 0) ? (length == 127 ? ReadInt32() : length) * 2 : length == -128 ? ReadInt32() : -length);
+            Skip((length >= 0) ? (length == 127 ? ReadInt32() : length)*2 : length == -128 ? ReadInt32() : -length);
         }
 
         /// <summary>
@@ -221,7 +218,11 @@ namespace reWZ
 
         internal static byte[] Inflate(byte[] compressed)
         {
-#if ZLIB
+            if (Util._is64bit) {
+                using (MemoryStream @in = new MemoryStream(compressed))
+                    return Inflate(@in);
+            }
+
             Debug.WriteLine("Inflating via zlib");
             using (Inflater d = new Inflater())
             using (MemoryStream @out = new MemoryStream(512*1024)) {
@@ -230,10 +231,6 @@ namespace reWZ
                 d.Finish();
                 return @out.ToArray();
             }
-#else
-            using (MemoryStream @in = new MemoryStream(compressed))
-                return Inflate(@in);
-#endif
         }
 
         internal static byte[] Inflate(Stream @in)
@@ -243,7 +240,16 @@ namespace reWZ
                 length = Math.Max(@in.Length, length);
             } catch {}
             byte[] dec = new byte[length];
-#if ZLIB
+
+            if (Util._is64bit) {
+                using (DeflateStream dStr = new DeflateStream(@in, CompressionMode.Decompress))
+                using (MemoryStream @out = new MemoryStream(dec.Length*2)) {
+                    int len;
+                    while ((len = dStr.Read(dec, 0, dec.Length)) > 0) @out.Write(dec, 0, len);
+                    return @out.ToArray();
+                }
+            }
+
             Debug.WriteLine("Inflating via zlib");
             using (Inflater d = new Inflater())
             using (MemoryStream @out = new MemoryStream(2*dec.Length)) {
@@ -253,16 +259,8 @@ namespace reWZ
                     d.Add(dec, 0, len);
                 d.Finish();
                 return @out.ToArray();
+
             }
-#else
-            using (DeflateStream dStr = new DeflateStream(@in, CompressionMode.Decompress))
-            using (MemoryStream @out = new MemoryStream(dec.Length * 2))
-            {
-                int len;
-                while ((len = dStr.Read(dec, 0, dec.Length)) > 0) @out.Write(dec, 0, len);
-                return @out.ToArray();
-            }
-#endif
         }
     }
 

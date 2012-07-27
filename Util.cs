@@ -29,10 +29,15 @@
 // If you modify this library, you may extend this exception to your version
 // of the library, but you are not obligated to do so. If you do not wish to
 // do so, delete this exception statement from your version.
+
+using System;
+
 namespace reWZ
 {
     internal static class Util
     {
+        internal static readonly bool _is64bit = (IntPtr.Size == 8);
+
         internal static bool IsSet(this WZReadSelection options, WZReadSelection flag)
         {
             return (options & flag) == flag;

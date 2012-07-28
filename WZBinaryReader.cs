@@ -33,7 +33,6 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
-using DotZLib;
 using System.IO.Compression;
 
 namespace reWZ

@@ -1,4 +1,4 @@
-﻿// reWZ is copyright angelsl, 2011 to 2012 inclusive.
+// reWZ is copyright angelsl, 2011 to 2012 inclusive.
 // 
 // This file is part of reWZ.
 // 
@@ -29,11 +29,11 @@
 // If you modify this library, you may extend this exception to your version
 // of the library, but you are not obligated to do so. If you do not wish to
 // do so, delete this exception statement from your version.
+
 using System;
 using System.Collections.Generic;
-using reWZ.WZProperties;
 
-namespace reWZ
+namespace reWZ.WZProperties
 {
     /// <summary>
     /// Ab abstract class representing a WZ property that contains a value of type <typeparamref name="T"/> and is lazy-loaded.

@@ -29,6 +29,7 @@
 // If you modify this library, you may extend this exception to your version
 // of the library, but you are not obligated to do so. If you do not wish to
 // do so, delete this exception statement from your version.
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -37,7 +38,7 @@ using System.Linq;
 using System.Text;
 using Assembine;
 
-namespace reWZ
+namespace reWZ.WZProperties
 {
     /// <summary>
     ///   An object in a WZ file.

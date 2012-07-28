@@ -66,22 +66,20 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assembine\NullEnumerator.cs" />
-    <Compile Include="DotZLib\CodecBase.cs" />
-    <Compile Include="DotZLib\DotZLib.cs" />
-    <Compile Include="DotZLib\Inflater.cs" />
+    <Compile Include="DotZLib.cs" />
     <Compile Include="Util.cs" />
     <Compile Include="WZAES.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WZBinaryReader.cs" />
-    <Compile Include="WZDirectory.cs" />
     <Compile Include="WZException.cs" />
     <Compile Include="WZFile.cs" />
-    <Compile Include="WZImage.cs" />
-    <Compile Include="WZObject.cs" />
+    <Compile Include="WZProperties\WZImage.cs" />
     <Compile Include="WZProperties\SimpleProperties.cs" />
     <Compile Include="WZProperties\WZCanvasProperty.cs" />
+    <Compile Include="WZProperties\WZDirectory.cs" />
+    <Compile Include="WZProperties\WZObject.cs" />
+    <Compile Include="WZProperties\WZProperty.cs" />
     <Compile Include="WZProperties\WZSubProperty.cs" />
-    <Compile Include="WZProperty.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="zlib1.dll">

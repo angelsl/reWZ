@@ -36,7 +36,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
-using Assembine;
 
 namespace reWZ.WZProperties
 {
@@ -129,7 +128,7 @@ namespace reWZ.WZProperties
         public virtual IEnumerator<WZObject> GetEnumerator()
         {
             File.CheckDisposed();
-            return _canContainChildren ? _backing.GetEnumerator() : new NullEnumerator<WZObject>();
+            return _canContainChildren ? _backing.GetEnumerator() : (IEnumerator<WZObject>) Enumerable.Empty<WZObject>();
         }
 
         IEnumerator IEnumerable.GetEnumerator()

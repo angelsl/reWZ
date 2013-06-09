@@ -81,7 +81,10 @@
     <Compile Include="WZProperties\WZSubProperty.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="zlib1.dll">
+    <Content Include="zlib1_32.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="zlib1_64.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

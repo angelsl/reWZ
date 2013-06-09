@@ -12,17 +12,66 @@ namespace reWZ
 {
     internal sealed class Inflater : IDisposable
     {
-        [DllImport("ZLIB1.dll", CallingConvention=CallingConvention.Cdecl, CharSet=CharSet.Ansi)]
-        private static extern int inflateInit_(ref ZStream sz, string vs, int size);
+        [DllImport("zlib1_32.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi, EntryPoint = "inflateInit_")]
+        private static extern int b32inflateInit_(ref ZStream sz, [MarshalAs(UnmanagedType.LPStr)] string vs, int size);
 
-        [DllImport("ZLIB1.dll", CallingConvention=CallingConvention.Cdecl)]
-        private static extern int inflate(ref ZStream sz, int flush);
+        [DllImport("zlib1_32.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "inflate")]
+        private static extern int b32inflate(ref ZStream sz, int flush);
 
-        [DllImport("ZLIB1.dll", CallingConvention=CallingConvention.Cdecl)]
-        private static extern int inflateReset(ref ZStream sz);
+        [DllImport("zlib1_32.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "inflateReset")]
+        private static extern int b32inflateReset(ref ZStream sz);
 
-        [DllImport("ZLIB1.dll", CallingConvention=CallingConvention.Cdecl)]
-        private static extern int inflateEnd(ref ZStream sz);
+        [DllImport("zlib1_32.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "inflateEnd")]
+        private static extern int b32inflateEnd(ref ZStream sz);
+
+        [DllImport("zlib1_32.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "zlibVersion")]
+        private static extern IntPtr b32ZlibVersion();
+
+        [DllImport("zlib1_32.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "zlibCompileFlags")]
+        private static extern int b32zlibCompileFlags();
+
+        [DllImport("zlib1_64.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi, EntryPoint = "inflateInit_")]
+        private static extern int b64inflateInit_(ref ZStream sz, [MarshalAs(UnmanagedType.LPStr)] string vs, int size);
+
+        [DllImport("zlib1_64.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "inflate")]
+        private static extern int b64inflate(ref ZStream sz, int flush);
+
+        [DllImport("zlib1_64.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "inflateReset")]
+        private static extern int b64inflateReset(ref ZStream sz);
+
+        [DllImport("zlib1_64.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "inflateEnd")]
+        private static extern int b64inflateEnd(ref ZStream sz);
+
+        [DllImport("zlib1_64.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "zlibVersion")]
+        private static extern IntPtr b64ZlibVersion();
+
+        [DllImport("zlib1_64.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "zlibCompileFlags")]
+        private static extern int b64zlibCompileFlags();
+
+        private static int inflateInit_(ref ZStream sz, string vs, int size) {
+            return Util._is64bit ? b64inflateInit_(ref sz, vs, size) : b32inflateInit_(ref sz, vs, size);
+        }
+
+        private static int inflate(ref ZStream sz, int flush) {
+            return Util._is64bit ? b64inflate(ref sz, flush) : b32inflate(ref sz, flush);
+        }
+
+        private static int inflateReset(ref ZStream sz) {
+            return Util._is64bit ? b64inflateReset(ref sz) : b32inflateReset(ref sz);
+        }
+
+        private static int inflateEnd(ref ZStream sz) {
+            return Util._is64bit ? b64inflateEnd(ref sz) : b32inflateEnd(ref sz);
+        }
+
+        private static string ZlibVersion() {
+            return Marshal.PtrToStringAnsi(Util._is64bit ? b64ZlibVersion() : b32ZlibVersion());
+        }
+
+        private static int ZlibCompileFlags()
+        {
+            return Util._is64bit ? b64zlibCompileFlags() : b32zlibCompileFlags();
+        }
 
         private ZStream _ztream;
 
@@ -51,7 +100,7 @@ namespace reWZ
 
             int retval = inflateInit_(ref _ztream, ZlibVersion(), Marshal.SizeOf(_ztream));
             if (retval != 0)
-                throw new ZLibException(retval, "Could not initialize inflater");
+                throw new ZLibException(retval, "Could not initialize inflater \"" + ZlibVersion() + "\" " + ZlibCompileFlags() + " " + Marshal.SizeOf(_ztream));
 
             ResetOutput();
         }
@@ -60,7 +109,7 @@ namespace reWZ
 
         private void OnDataAvailable()
         {
-            if (_ztream.total_out <= 0) return;
+            if (_ztream.total_out <= 0U) return;
             if (DataAvailable != null)
                 DataAvailable( _outBuffer, 0, (int)_ztream.total_out);
             ResetOutput();
@@ -141,9 +190,6 @@ namespace reWZ
             inflateReset(ref _ztream);
             ResetOutput();
         }
-
-        [DllImport("ZLIB1.dll", CallingConvention=CallingConvention.Cdecl)]
-        private static extern string ZlibVersion();
     }
 
     internal enum FlushTypes
@@ -151,7 +197,7 @@ namespace reWZ
         None = 0,  Finish = 4
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack=4, Size=0, CharSet=CharSet.Ansi)]
+    [StructLayout(LayoutKind.Sequential, Pack=8, Size=0, CharSet=CharSet.Ansi)]
     internal struct ZStream
     {
         public IntPtr next_in;
@@ -164,14 +210,14 @@ namespace reWZ
 
         [MarshalAs(UnmanagedType.LPStr)]
         string msg;
-        uint state;
+        IntPtr state;
 
-        uint zalloc;
-        uint zfree;
-        uint opaque;
+        IntPtr zalloc;
+        IntPtr zfree;
+        IntPtr opaque;
 
         int data_type;
-        private uint adler;
+        uint adler;
         uint reserved;
     }
 

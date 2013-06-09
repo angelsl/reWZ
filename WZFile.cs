@@ -1,6 +1,6 @@
-﻿// reWZ is copyright angelsl, 2011 to 2012 inclusive.
+﻿// reWZ is copyright angelsl, 2011 to 2013 inclusive.
 // 
-// This file is part of reWZ.
+// This file (WZFile.cs) is part of reWZ.
 // 
 // reWZ is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,20 +15,17 @@
 // You should have received a copy of the GNU General Public License
 // along with reWZ. If not, see <http://www.gnu.org/licenses/>.
 // 
-// Linking this library statically or dynamically with other modules
-// is making a combined work based on this library. Thus, the terms and
+// Linking reWZ statically or dynamically with other modules
+// is making a combined work based on reWZ. Thus, the terms and
 // conditions of the GNU General Public License cover the whole combination.
 // 
-// As a special exception, the copyright holders of this library give you
-// permission to link this library with independent modules to produce an
+// As a special exception, the copyright holders of reWZ give you
+// permission to link reWZ with independent modules to produce an
 // executable, regardless of the license terms of these independent modules,
 // and to copy and distribute the resulting executable under terms of your
 // choice, provided that you also meet, for each linked independent module,
 // the terms and conditions of the license of that module. An independent
-// module is a module which is not derived from or based on this library.
-// If you modify this library, you may extend this exception to your version
-// of the library, but you are not obligated to do so. If you do not wish to
-// do so, delete this exception statement from your version.
+// module is a module which is not derived from or based on reWZ.
 using System;
 using System.Globalization;
 using System.IO;
@@ -158,14 +155,89 @@ namespace reWZ
             }
         }
 
-        private void GuessVersion()
-        {
+        private void GuessVersion() {
             _r.Seek(_fstart);
             short ver = _r.ReadInt16();
+            bool success;
+            long offset = TryFindImageInDir(out success);
+            if (success) {
+                success = GuessVersionWithImageOffsetAt(ver, offset);
+                _r.Seek(_fstart);
+                if (success) return;
+            }
+
+            for (ushort v = 0; v < ushort.MaxValue; v++) {
+                uint vHash = v.ToString(CultureInfo.InvariantCulture)
+                              .Aggregate<char, uint>(0, (current, t) => (32*current) + t + 1);
+                if ((0xFF ^ (vHash >> 24) ^ (vHash << 8 >> 24) ^ (vHash << 16 >> 24) ^ (vHash << 24 >> 24)) != ver) continue;
+                _r.VersionHash = vHash;
+                if (DepthFirstImageSearch(out offset)) break;
+            }
+
+            if (!GuessVersionWithImageOffsetAt(ver, offset)) Die("Unable to guess WZ version.");
+            _r.Seek(_fstart);
+        }
+
+        private bool DepthFirstImageSearch(out long offset) {
+            bool success = false;
+            offset = -1;
+            int count = _r.ReadWZInt();
+            for (int i = 0; i < count; i++) {
+                byte type = _r.ReadByte();
+                switch (type) {
+                    case 1:
+                        _r.Skip(10);
+                        continue;
+                    case 2:
+                        int x = _r.ReadInt32();
+                        type = _r.PeekFor(() => {
+                                              _r.Seek(x + _fstart);
+                                              return _r.ReadByte();
+                                          });
+                        break;
+                    case 3:
+                    case 4:
+                        _r.SkipWZString();
+                        break;
+                    default:
+                        Die("Unknown object type in WzDirectory.");
+                        break;
+                }
+
+                _r.ReadWZInt();
+                _r.ReadWZInt();
+                offset = _r.BaseStream.Position;
+                if (type == 4) {
+                    success = true;
+                    break;
+                }
+
+                if (type == 3) {
+                    try {
+                        offset = _r.PeekFor(() => {
+                                                _r.Seek(_r.ReadWZOffset(_fstart));
+                                                long o;
+                                                success = DepthFirstImageSearch(out o);
+                                                return o;
+                                            });
+                        break;
+                    } catch {}
+                }
+                _r.Skip(4);
+            }
+            return success;
+        }
+
+        private long TryFindImageInDir(out bool success) {
             int count = _r.ReadWZInt();
             if (count == 0) Die("WZ file has no entries!");
             long offset = 0;
-            bool success = false;
+            offset = TryFindImageOffset(count, offset, out success);
+            return offset;
+        }
+
+        private long TryFindImageOffset(int count, long offset, out bool success) {
+            success = false;
             for (int i = 0; i < count; i++) {
                 byte type = _r.ReadByte();
                 switch (type) {
@@ -193,27 +265,33 @@ namespace reWZ
                 offset = _r.BaseStream.Position;
                 _r.Skip(4);
                 if (type != 4) continue;
+
                 success = true;
                 break;
             }
-            if (!success) Die("WZ file has no images!");
-            success = false;
+            return offset;
+        }
+
+        private bool GuessVersionWithImageOffsetAt(short ver, long offset) {
+            bool success = false;
             for (ushort v = 0; v < ushort.MaxValue; v++) {
-                uint vHash = v.ToString(CultureInfo.InvariantCulture).Aggregate<char, uint>(0, (current, t) => (32*current) + t + 1);
+                uint vHash = v.ToString(CultureInfo.InvariantCulture)
+                              .Aggregate<char, uint>(0, (current, t) => (32*current) + t + 1);
                 if ((0xFF ^ (vHash >> 24) ^ (vHash << 8 >> 24) ^ (vHash << 16 >> 24) ^ (vHash << 24 >> 24)) != ver) continue;
                 _r.Seek(offset);
                 _r.VersionHash = vHash;
                 try {
                     _r.Seek(_r.ReadWZOffset(_fstart));
-                    if (_r.ReadByte() != 0x73 || (_r.PeekFor(() => _r.ReadWZString()) != "Property" && _r.PeekFor(() => _r.ReadWZString(false)) != "Property")) continue;
+                    if (_r.ReadByte() != 0x73 ||
+                        (_r.PeekFor(() => _r.ReadWZString()) != "Property" &&
+                         _r.PeekFor(() => _r.ReadWZString(false)) != "Property")) continue;
                     success = true;
                     break;
                 } catch {
                     success = false;
                 }
             }
-            if (!success) Die("Failed to guess WZ file version!");
-            _r.Seek(_fstart);
+            return success;
         }
 
         internal Stream GetSubbytes(long offset, long length)

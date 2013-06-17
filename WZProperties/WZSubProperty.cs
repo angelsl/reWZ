@@ -35,7 +35,7 @@ namespace reWZ.WZProperties
     /// </summary>
     public sealed class WZSubProperty : WZProperty<WZNothing>
     {
-        internal WZSubProperty(string name, WZObject parent, WZBinaryReader r, WZImage container) : base(name, parent, default(WZNothing), container, true)
+        internal WZSubProperty(string name, WZObject parent, WZBinaryReader r, WZImage container) : base(name, parent, default(WZNothing), container, true, WZObjectType.SubProperty)
         {
             WZExtendedParser.ParsePropertyList(r, this, Image, Image._encrypted).ForEach(Add);
         }
@@ -47,7 +47,7 @@ namespace reWZ.WZProperties
     public sealed class WZConvexProperty : WZProperty<WZNothing>
     {
         internal WZConvexProperty(string name, WZObject parent, WZBinaryReader r, WZImage container)
-            : base(name, parent, default(WZNothing), container, true)
+            : base(name, parent, default(WZNothing), container, true, WZObjectType.Convex)
         {
             int count = r.ReadWZInt();
             for (int i = 0; i < count; ++i)

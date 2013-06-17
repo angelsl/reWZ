@@ -45,14 +45,16 @@ namespace reWZ.WZProperties
         private readonly WZFile _file;
         private readonly string _name;
         private readonly WZObject _parent;
+        private readonly WZObjectType _type;
 
-        internal WZObject(string name, WZObject parent, WZFile container, bool children)
+        internal WZObject(string name, WZObject parent, WZFile container, bool children, WZObjectType type)
         {
             _name = String.Intern(name);
             _parent = parent;
             _file = container;
             _canContainChildren = children;
             if (_canContainChildren) _backing = new ChildCollection();
+            _type = type;
         }
 
         /// <summary>
@@ -85,6 +87,13 @@ namespace reWZ.WZProperties
         public WZFile File
         {
             get { return _file; }
+        }
+
+        /// <summary>
+        ///   The type of this object.
+        /// </summary>
+        public WZObjectType Type {
+            get { return _type; }
         }
 
         /// <summary>
@@ -215,5 +224,22 @@ namespace reWZ.WZProperties
         }
 
         #endregion
+    }
+
+    public enum WZObjectType {
+        Directory,
+        Image,
+        Null,
+        UInt16,
+        Int32,
+        Single,
+        Double,
+        String,
+        Point,
+        UOL,
+        MP3,
+        Canvas,
+        SubProperty,
+        Convex
     }
 }

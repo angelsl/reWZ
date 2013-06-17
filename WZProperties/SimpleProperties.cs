@@ -43,7 +43,7 @@ namespace reWZ.WZProperties
     /// </summary>
     public sealed class WZNullProperty : WZProperty<WZNothing>
     {
-        internal WZNullProperty(string name, WZObject parent, WZImage container) : base(name, parent, default(WZNothing), container, false)
+        internal WZNullProperty(string name, WZObject parent, WZImage container) : base(name, parent, default(WZNothing), container, false, WZObjectType.Null)
         {}
     }
 
@@ -53,7 +53,7 @@ namespace reWZ.WZProperties
     public sealed class WZUInt16Property : WZProperty<ushort>
     {
         internal WZUInt16Property(string name, WZObject parent, WZBinaryReader reader, WZImage container)
-            : base(name, parent, reader.ReadUInt16(), container, false)
+            : base(name, parent, reader.ReadUInt16(), container, false, WZObjectType.UInt16)
         {}
     }
 
@@ -63,7 +63,7 @@ namespace reWZ.WZProperties
     public sealed class WZInt32Property : WZProperty<int>
     {
         internal WZInt32Property(string name, WZObject parent, WZBinaryReader reader, WZImage container)
-            : base(name, parent, reader.ReadWZInt(), container, false)
+            : base(name, parent, reader.ReadWZInt(), container, false, WZObjectType.Int32)
         {}
     }
 
@@ -73,7 +73,7 @@ namespace reWZ.WZProperties
     public sealed class WZSingleProperty : WZProperty<Single>
     {
         internal WZSingleProperty(string name, WZObject parent, WZBinaryReader reader, WZImage container)
-            : base(name, parent, ReadSingle(reader), container, false)
+            : base(name, parent, ReadSingle(reader), container, false, WZObjectType.Single)
         {}
 
         private static Single ReadSingle(WZBinaryReader reader)
@@ -89,7 +89,7 @@ namespace reWZ.WZProperties
     public sealed class WZDoubleProperty : WZProperty<Double>
     {
         internal WZDoubleProperty(string name, WZObject parent, WZBinaryReader reader, WZImage container)
-            : base(name, parent, reader.ReadDouble(), container, false)
+            : base(name, parent, reader.ReadDouble(), container, false, WZObjectType.Double)
         {}
     }
 
@@ -99,7 +99,7 @@ namespace reWZ.WZProperties
     public sealed class WZStringProperty : WZDelayedProperty<String>
     {
         internal WZStringProperty(string name, WZObject parent, WZImage container)
-            : base(name, parent, container, false)
+            : base(name, parent, container, false, WZObjectType.String)
         {}
 
         internal override bool Parse(WZBinaryReader r, bool initial, out string result)
@@ -120,7 +120,7 @@ namespace reWZ.WZProperties
     public sealed class WZPointProperty : WZProperty<Point>
     {
         internal WZPointProperty(string name, WZObject parent, WZBinaryReader wzbr, WZImage container)
-            : base(name, parent, new Point(wzbr.ReadWZInt(), wzbr.ReadWZInt()), container, false)
+            : base(name, parent, new Point(wzbr.ReadWZInt(), wzbr.ReadWZInt()), container, false, WZObjectType.Point)
         {}
     }
 
@@ -130,7 +130,7 @@ namespace reWZ.WZProperties
     public sealed class WZUOLProperty : WZProperty<String>
     {
         internal WZUOLProperty(string name, WZObject parent, WZBinaryReader reader, WZImage container)
-            : base(name, parent, String.Intern(reader.ReadWZStringBlock(container._encrypted)), container, false)
+            : base(name, parent, String.Intern(reader.ReadWZStringBlock(container._encrypted)), container, false, WZObjectType.UOL)
         {}
 
         /// <summary>
@@ -161,7 +161,7 @@ namespace reWZ.WZProperties
     public sealed class WZMP3Property : WZDelayedProperty<byte[]>, IDisposable
     {
         internal WZMP3Property(string name, WZObject parent, WZImage container)
-            : base(name, parent, container, false)
+            : base(name, parent, container, false, WZObjectType.MP3)
         {}
 
         internal override bool Parse(WZBinaryReader r, bool initial, out byte[] result)

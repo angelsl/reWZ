@@ -43,7 +43,7 @@ namespace reWZ.WZProperties
         /// </summary>
         protected bool _parsed;
 
-        internal WZDelayedProperty(string name, WZObject parent, WZImage container, bool children) : base(name, parent, default(T), container, children)
+        internal WZDelayedProperty(string name, WZObject parent, WZImage container, bool children, WZObjectType type) : base(name, parent, default(T), container, children, type)
         {
             _offset = container._r.BaseStream.Position;
             lock (File._lock)
@@ -86,7 +86,7 @@ namespace reWZ.WZProperties
         private readonly WZImage _image;
         internal T _value;
 
-        internal WZProperty(string name, WZObject parent, T value, WZImage container, bool children) : base(name, parent, container.File, children)
+        internal WZProperty(string name, WZObject parent, T value, WZImage container, bool children, WZObjectType type) : base(name, parent, container.File, children, type)
         {
             _value = value;
             _image = container;

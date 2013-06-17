@@ -35,7 +35,7 @@ namespace reWZ.WZProperties
     /// </summary>
     public sealed class WZDirectory : WZObject
     {
-        internal WZDirectory(string name, WZObject parent, WZFile file, WZBinaryReader wzbr, long offset) : base(name, parent, file, true)
+        internal WZDirectory(string name, WZObject parent, WZFile file, WZBinaryReader wzbr, long offset) : base(name, parent, file, true, WZObjectType.Directory)
         {
             Parse(wzbr, offset);
         }

@@ -45,7 +45,7 @@ namespace reWZ.WZProperties
         private GCHandle _gcH;
 
         internal WZCanvasProperty(string name, WZObject parent, WZBinaryReader br, WZImage container)
-            : base(name, parent, container, true)
+            : base(name, parent, container, true, WZObjectType.Canvas)
         {}
 
         /// <summary>

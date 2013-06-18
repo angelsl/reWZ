@@ -158,10 +158,10 @@ namespace reWZ.WZProperties
     /// <summary>
     ///   A sound property.
     /// </summary>
-    public sealed class WZMP3Property : WZDelayedProperty<byte[]>, IDisposable
+    public sealed class WZAudioProperty : WZDelayedProperty<byte[]>, IDisposable
     {
-        internal WZMP3Property(string name, WZObject parent, WZImage container)
-            : base(name, parent, container, false, WZObjectType.MP3)
+        internal WZAudioProperty(string name, WZObject parent, WZImage container)
+            : base(name, parent, container, false, WZObjectType.Audio)
         {}
 
         internal override bool Parse(WZBinaryReader r, bool initial, out byte[] result)
@@ -169,12 +169,12 @@ namespace reWZ.WZProperties
             r.Skip(1);
             int blockLen = r.ReadWZInt(); // sound data length
             r.ReadWZInt(); // sound duration
-            r.Skip(82); // header [82 bytes]
-            if (!initial || File._flag.IsSet(WZReadSelection.EagerParseMP3)) {
-                result = r.ReadBytes(blockLen);
+            //r.Skip(82); // header [82 bytes]
+            if (!initial || File._flag.IsSet(WZReadSelection.EagerParseAudio)) {
+                result = r.ReadBytes(blockLen+82);
                 return true; // sound data 
             }
-            r.Skip(blockLen);
+            r.Skip(blockLen+82);
             result = null;
             return false;
         }

@@ -171,7 +171,7 @@ namespace reWZ.WZProperties
                     case "Shape2D#Convex2D":
                         return new WZConvexProperty(name, parent, r, f);
                     case "Sound_DX8":
-                        return new WZMP3Property(name, parent, f);
+                        return new WZAudioProperty(name, parent, f);
                     case "UOL":
                         r.Skip(1);
                         return new WZUOLProperty(name, parent, r, f);

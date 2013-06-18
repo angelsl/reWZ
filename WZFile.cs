@@ -339,9 +339,9 @@ namespace reWZ
         EagerParseStrings = 1,
 
         /// <summary>
-        ///   Set this flag to disable lazy loading of MP3 properties.
+        ///   Set this flag to disable lazy loading of Audio properties.
         /// </summary>
-        EagerParseMP3 = 2,
+        EagerParseAudio = 2,
 
         /// <summary>
         ///   Set this flag to disable lazy loading of canvas properties.
@@ -354,9 +354,9 @@ namespace reWZ
         NeverParseCanvas = 8,
 
         /// <summary>
-        ///   Set this flag to disable lazy loading of string, MP3 and canvas properties.
+        ///   Set this flag to disable lazy loading of string, Audio and canvas properties.
         /// </summary>
-        EagerParseAll = EagerParseCanvas | EagerParseMP3 | EagerParseStrings,
+        EagerParseAll = EagerParseCanvas | EagerParseAudio | EagerParseStrings,
 
         /// <summary>
         ///   Set this flag to disable lazy loading of WZ images.

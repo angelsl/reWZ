@@ -237,7 +237,7 @@ namespace reWZ.WZProperties
         String,
         Point,
         UOL,
-        MP3,
+        Audio,
         Canvas,
         SubProperty,
         Convex

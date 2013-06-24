@@ -217,23 +217,6 @@ namespace reWZ
             }
         }
 
-        internal static byte[] Inflate(byte[] compressed)
-        {
-            if (Util._isLinux) {
-                using (MemoryStream @in = new MemoryStream(compressed))
-                    return Inflate(@in);
-            }
-
-            Debug.WriteLine("Inflating via zlib");
-            using (Inflater d = new Inflater())
-            using (MemoryStream @out = new MemoryStream(512*1024)) {
-                d.DataAvailable += (data, index, count) => { if (@out != null) @out.Write(data, index, count); };
-                d.Add(compressed);
-                d.Finish();
-                return @out.ToArray();
-            }
-        }
-
         internal static byte[] Inflate(Stream @in)
         {
             long length = 512*1024;
@@ -241,25 +224,11 @@ namespace reWZ
                 length = Math.Max(@in.Length, length);
             } catch {}
             byte[] dec = new byte[length];
-
-            if (Util._isLinux) {
-                using (DeflateStream dStr = new DeflateStream(@in, CompressionMode.Decompress))
-                using (MemoryStream @out = new MemoryStream(dec.Length*2)) {
-                    int len;
-                    while ((len = dStr.Read(dec, 0, dec.Length)) > 0) @out.Write(dec, 0, len);
-                    return @out.ToArray();
-                }
-            }
-
-            using (Inflater d = new Inflater())
-            using (MemoryStream @out = new MemoryStream(2*dec.Length)) {
-                d.DataAvailable += @out.Write;
+            using (DeflateStream dStr = new DeflateStream(@in, CompressionMode.Decompress))
+            using (MemoryStream @out = new MemoryStream(dec.Length*2)) {
                 int len;
-                while ((len = @in.Read(dec, 0, dec.Length)) > 0)
-                    d.Add(dec, 0, len);
-                d.Finish();
+                while ((len = dStr.Read(dec, 0, dec.Length)) > 0) @out.Write(dec, 0, len);
                 return @out.ToArray();
-
             }
         }
     }

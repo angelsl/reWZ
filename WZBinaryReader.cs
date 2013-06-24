@@ -219,7 +219,7 @@ namespace reWZ
 
         internal static byte[] Inflate(byte[] compressed)
         {
-            if (Util._is64bit) {
+            if (Util._isLinux) {
                 using (MemoryStream @in = new MemoryStream(compressed))
                     return Inflate(@in);
             }
@@ -253,7 +253,7 @@ namespace reWZ
 
             using (Inflater d = new Inflater())
             using (MemoryStream @out = new MemoryStream(2*dec.Length)) {
-                d.DataAvailable += (data, index, count) => @out.Write(data, index, count);
+                d.DataAvailable += @out.Write;
                 int len;
                 while ((len = @in.Read(dec, 0, dec.Length)) > 0)
                     d.Add(dec, 0, len);

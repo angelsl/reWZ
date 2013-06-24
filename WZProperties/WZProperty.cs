@@ -59,21 +59,15 @@ namespace reWZ.WZProperties
         {
             get
             {
-                File.CheckDisposed();
-                Parse();
+                if (!_parsed)
+                    lock (File._lock)
+                        _parsed = Image._r.PeekFor(() =>
+                                                   {
+                                                       Image._r.Seek(_offset);
+                                                       return Parse(Image._r, false, out _value);
+                                                   });
                 return _value;
             }
-        }
-
-        internal void Parse()
-        {
-            if (!_parsed)
-                lock (File._lock)
-                    _parsed = Image._r.PeekFor(() =>
-                    {
-                        Image._r.Seek(_offset);
-                        return Parse(Image._r, false, out _value);
-                    });
         }
     }
 
@@ -99,7 +93,6 @@ namespace reWZ.WZProperties
         {
             get
             {
-                File.CheckDisposed();
                 return _value;
             }
         }

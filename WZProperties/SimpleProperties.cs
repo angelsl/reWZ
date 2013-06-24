@@ -104,7 +104,7 @@ namespace reWZ.WZProperties
 
         internal override bool Parse(WZBinaryReader r, bool initial, out string result)
         {
-            if (!initial || File._flag.IsSet(WZReadSelection.EagerParseStrings)) {
+            if (!initial || (File._flag & WZReadSelection.EagerParseStrings) == WZReadSelection.EagerParseStrings) {
                 result = String.Intern(r.ReadWZStringBlock(Image._encrypted));
                 return true;
             }
@@ -170,7 +170,7 @@ namespace reWZ.WZProperties
             int blockLen = r.ReadWZInt(); // sound data length
             r.ReadWZInt(); // sound duration
             //r.Skip(82); // header [82 bytes]
-            if (!initial || File._flag.IsSet(WZReadSelection.EagerParseAudio)) {
+            if (!initial || (File._flag & WZReadSelection.EagerParseAudio) == WZReadSelection.EagerParseAudio) {
                 result = r.ReadBytes(blockLen+82);
                 return true; // sound data 
             }

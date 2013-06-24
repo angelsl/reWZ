@@ -79,7 +79,7 @@ namespace reWZ.WZProperties
                                              Add(new WZDirectory(name, this, File, wzbr, woffset));
                                              break;
                                          case 4:
-                                             if ((File._flag.IsSet(WZReadSelection.EagerParseCanvas) || File._flag.IsSet(WZReadSelection.EagerParseAudio) || File._flag.IsSet(WZReadSelection.EagerParseStrings)) && !(File._file is MemoryStream) && !File._flag.IsSet(WZReadSelection.LowMemory))
+                                             if (((File._flag & WZReadSelection.EagerParseCanvas) == WZReadSelection.EagerParseCanvas || (File._flag & WZReadSelection.EagerParseAudio) == WZReadSelection.EagerParseAudio || (File._flag & WZReadSelection.EagerParseStrings) == WZReadSelection.EagerParseStrings) && !(File._file is MemoryStream) && !((File._flag & WZReadSelection.LowMemory) == WZReadSelection.LowMemory))
                                                  Add(new WZImage(name, this, File, new WZBinaryReader(File.GetSubbytes(woffset, size), File._aes, wzbr.VersionHash),
                                                                  () => new WZBinaryReader(File.GetSubstream(woffset, size), File._aes, wzbr.VersionHash)));
                                              else

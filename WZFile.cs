@@ -45,7 +45,6 @@ namespace reWZ
         internal readonly WZReadSelection _flag;
         private WZBinaryReader _r;
         internal readonly WZVariant _variant;
-        private bool _disposed;
         private readonly bool _disposeStream;
         internal uint _fstart;
         internal readonly object _lock = new object();
@@ -97,7 +96,6 @@ namespace reWZ
         {
             get
             {
-                CheckDisposed();
                 return _maindir;
             }
         }
@@ -115,21 +113,14 @@ namespace reWZ
 
         private void Dispose(bool disposing)
         {
-            CheckDisposed();
             _r.Close(disposing && _disposeStream);
             _maindir = null;
             _aes = null;
             _r = null;
             _file = null;
-            _disposed = true;
         }
 
         #endregion
-
-        internal void CheckDisposed()
-        {
-            if(_disposed) throw new ObjectDisposedException("WZ file");
-        }
 
         /// <summary>
         ///   Resolves a path in the form "/a/b/c/.././d/e/f/".
@@ -138,13 +129,12 @@ namespace reWZ
         /// <exception cref="System.Collections.Generic.KeyNotFoundException">The path has an invalid node.</exception>
         public WZObject ResolvePath(string path)
         {
-            CheckDisposed();
             return (path.StartsWith("/") ? path.Substring(1) : path).Split('/').Where(node => node != ".").Aggregate<string, WZObject>(_maindir, (current, node) => node == ".." ? current.Parent : current[node]);
         }
 
         private void Parse()
         {
-            _r.Seek(0, SeekOrigin.Begin);
+            _r.Seek(0);
             lock (_lock) {
                 if (_r.ReadASCIIString(4) != "PKG1") Die("WZ file has invalid header; file does not have magic \"PKG1\".");
                 _r.Skip(8);
@@ -296,7 +286,6 @@ namespace reWZ
 
         internal Stream GetSubbytes(long offset, long length)
         {
-            CheckDisposed();
             byte[] @out = new byte[length];
             long p = _file.Position;
             _file.Position = offset;
@@ -307,7 +296,6 @@ namespace reWZ
 
         internal Stream GetSubstream(long offset, long length)
         {
-            CheckDisposed();
             return new Substream(_file, offset, length);
         }
 

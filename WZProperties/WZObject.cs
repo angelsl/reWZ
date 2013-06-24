@@ -78,7 +78,7 @@ namespace reWZ.WZProperties
         /// </summary>
         public string Path
         {
-            get { File.CheckDisposed(); return ConstructPath(); }
+            get { return ConstructPath(); }
         }
 
         /// <summary>
@@ -105,9 +105,7 @@ namespace reWZ.WZProperties
         {
             get
             {
-                File.CheckDisposed();
-                ChildrenCheck();
-                if (!_backing.Contains(childName)) throw new KeyNotFoundException("No such child in WZDirectory.");
+                if (!_canContainChildren) throw new NotSupportedException("This WZObject cannot contain children.");
                 return _backing[childName];
             }
         }
@@ -119,7 +117,6 @@ namespace reWZ.WZProperties
         {
             get
             {
-                File.CheckDisposed();
                 return _canContainChildren ? _backing.Count : 0;
             }
         }
@@ -132,8 +129,7 @@ namespace reWZ.WZProperties
         /// <returns> A <see cref="T:System.Collections.Generic.IEnumerator`1" /> that can be used to iterate through the children in this property. </returns>
         public virtual IEnumerator<WZObject> GetEnumerator()
         {
-            File.CheckDisposed();
-            return _canContainChildren ? _backing.GetEnumerator() : (IEnumerator<WZObject>) Enumerable.Empty<WZObject>();
+            return _canContainChildren ? _backing.GetEnumerator() : Enumerable.Empty<WZObject>().GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -150,7 +146,6 @@ namespace reWZ.WZProperties
         /// <returns> true if this property has such a child, false otherwise or if this property cannot contain children. </returns>
         public virtual bool HasChild(string name)
         {
-            File.CheckDisposed();
             return _canContainChildren && _backing.Contains(name);
         }
 
@@ -187,7 +182,6 @@ namespace reWZ.WZProperties
         /// <returns> The object located at the path. </returns>
         public WZObject ResolvePath(string path)
         {
-            File.CheckDisposed();
             return (path.StartsWith("/") ? path.Substring(1) : path).Split('/').Where(node => node != ".").Aggregate(this, (current, node) => node == ".." ? current.Parent : current[node]);
         }
 
@@ -203,11 +197,6 @@ namespace reWZ.WZProperties
             while ((p = p.Parent) != null)
                 s.Insert(0, "/").Insert(0, p.Name);
             return String.Intern(s.ToString());
-        }
-
-        private void ChildrenCheck()
-        {
-            if (!_canContainChildren) throw new NotSupportedException("This WZObject cannot contain children.");
         }
 
         #region Nested type: ChildCollection

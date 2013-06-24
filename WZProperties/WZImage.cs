@@ -44,7 +44,7 @@ namespace reWZ.WZProperties
         {
             _r = reader;
             _transform = trans;
-            if (file._flag.IsSet(WZReadSelection.EagerParseImage)) Parse();
+            if ((file._flag & WZReadSelection.EagerParseImage) == WZReadSelection.EagerParseImage) Parse();
         }
 
         /// <summary>
@@ -56,8 +56,7 @@ namespace reWZ.WZProperties
         {
             get
             {
-                File.CheckDisposed();
-                Parse();
+                if(!_parsed) Parse();
                 return base[childName];
             }
         }
@@ -69,16 +68,14 @@ namespace reWZ.WZProperties
         {
             get
             {
-                File.CheckDisposed();
-                Parse();
+                if (!_parsed) Parse();
                 return base.ChildCount;
             }
         }
 
         public override System.Collections.Generic.IEnumerator<WZObject> GetEnumerator()
         {
-            File.CheckDisposed();
-            Parse();
+            if (!_parsed) Parse();
             return base.GetEnumerator();
         }
         /// <summary>
@@ -88,15 +85,12 @@ namespace reWZ.WZProperties
         /// <returns> true if this property has such a child, false otherwise or if this property cannot contain children. </returns>
         public override bool HasChild(string name)
         {
-            File.CheckDisposed();
-            Parse();
+            if (!_parsed) Parse();
             return base.HasChild(name);
         }
 
         private void Parse()
         {
-            File.CheckDisposed();
-            if (_parsed) return;
             lock (File._lock) {
                 _r.Seek(0);
                 if (_r.ReadByte() != 0x73) WZFile.Die("WZImage with invalid header (not beginning with 0x73!)");

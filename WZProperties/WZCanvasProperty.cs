@@ -58,7 +58,7 @@ namespace reWZ.WZProperties
 
         internal override bool Parse(WZBinaryReader br, bool initial, out Bitmap result)
         {
-            bool skip = (File._flag.IsSet(WZReadSelection.NeverParseCanvas)), eager = (File._flag.IsSet(WZReadSelection.EagerParseCanvas));
+            bool skip = (File._flag & WZReadSelection.NeverParseCanvas) == WZReadSelection.NeverParseCanvas, eager = (File._flag & WZReadSelection.EagerParseCanvas) == WZReadSelection.EagerParseCanvas;
             if (skip && eager) {
                 result = null;
                 return WZFile.Die<bool>("Both NeverParseCanvas and EagerParseCanvas are set.");

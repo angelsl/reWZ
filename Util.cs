@@ -39,10 +39,5 @@ namespace reWZ
             var p = (int)Environment.OSVersion.Platform;
             _isLinux = p == 4 || p == 6 || p == 128;
         }
-        
-        internal static bool IsSet(this WZReadSelection options, WZReadSelection flag)
-        {
-            return (options & flag) == flag;
-        }
     }
 }

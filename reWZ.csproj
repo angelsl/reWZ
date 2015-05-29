@@ -79,23 +79,4 @@
     <Compile Include="WZProperties\WZSubProperty.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup>
-    <PostBuildEvent>if $(ConfigurationName)==Debug exit
-rmdir /S /Q reWZ
-mkdir reWZ
-copy /V zlib1.dll /B reWZ\zlib1.dll
-copy /V reWZ.dll /B reWZ\reWZ.dll
-copy /V reWZ.xml /B reWZ\reWZ.xml
-cd reWZ
-7z a -tzip reWZ.zip *
-copy /V reWZ.zip /B ..\..\..\
-</PostBuildEvent>
-  </PropertyGroup>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>

@@ -216,19 +216,20 @@ namespace reWZ.WZProperties
     }
 
     public enum WZObjectType {
-        Directory,
-        Image,
-        Null,
-        UInt16,
-        Int32,
-        Single,
-        Double,
-        String,
-        Point,
-        UOL,
-        Audio,
-        Canvas,
-        SubProperty,
-        Convex
+        Directory = 0,
+        Image = 1,
+        Null = 2,
+        UInt16 = 3,
+        Int32 = 4,
+        Int64 = 14,
+        Single = 5,
+        Double = 6,
+        String = 7,
+        Point = 8,
+        UOL = 9,
+        Audio = 10,
+        Canvas = 11,
+        SubProperty = 12,
+        Convex = 13
     }
 }

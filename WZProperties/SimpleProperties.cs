@@ -68,6 +68,14 @@ namespace reWZ.WZProperties
     }
 
     /// <summary>
+    ///   A compressed signed 64-bit integer property.
+    /// </summary>
+    public sealed class WZInt64Property : WZProperty<long> {
+        internal WZInt64Property(string name, WZObject parent, WZBinaryReader reader, WZImage container)
+            : base(name, parent, reader.ReadWZLong(), container, false, WZObjectType.Int64) { }
+    }
+
+    /// <summary>
     ///   A floating point number with single precision property.
     /// </summary>
     public sealed class WZSingleProperty : WZProperty<Single>

@@ -116,7 +116,8 @@ namespace reWZ.WZProperties
                 List<WZObject> ret = new List<WZObject>(num);
                 for (int i = 0; i < num; ++i) {
                     string name = r.ReadWZStringBlock(encrypted);
-                    switch (r.ReadByte()) {
+                    byte type = r.ReadByte();
+                    switch (type) {
                         case 0:
                             ret.Add(new WZNullProperty(name, parent, f));
                             break;
@@ -124,8 +125,12 @@ namespace reWZ.WZProperties
                         case 2:
                             ret.Add(new WZUInt16Property(name, parent, r, f));
                             break;
+                        case 0x13:
                         case 3:
                             ret.Add(new WZInt32Property(name, parent, r, f));
+                            break;
+                        case 0x14:
+                            ret.Add(new WZInt64Property(name, parent, r, f));
                             break;
                         case 4:
                             ret.Add(new WZSingleProperty(name, parent, r, f));
@@ -142,7 +147,7 @@ namespace reWZ.WZProperties
                             r.Skip(blockLen);
                             break;
                         default:
-                            return WZFile.Die<List<WZObject>>("Unknown property type at ParsePropertyList");
+                            return WZFile.Die<List<WZObject>>(String.Format("Unknown property type {0} at ParsePropertyList", type));
                     }
                 }
                 return ret;

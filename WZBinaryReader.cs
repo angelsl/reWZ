@@ -209,6 +209,15 @@ namespace reWZ
             return s == -128 ? ReadInt32() : s;
         }
 
+        /// <summary>
+        ///   Reads a WZ-compressed 64-bit integer.
+        /// </summary>
+        /// <returns> The read integer. </returns>
+        internal long ReadWZLong() {
+            sbyte s = ReadSByte();
+            return s == -128 ? ReadInt64() : s;
+        }
+
         internal uint ReadWZOffset(uint fstart)
         {
             unchecked {

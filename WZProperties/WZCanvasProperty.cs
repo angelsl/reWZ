@@ -80,7 +80,7 @@ namespace reWZ.WZProperties
                 br.Skip(1);
                 ushort header = br.PeekFor(() => br.ReadUInt16());
                 byte[] pngData = br.ReadBytes(blockLen - 1);
-                result = ParsePNG(width, height, format1 + format2, (header != 0x9C78 && header != 0xDA78) ? DecryptPNG(pngData) : pngData);
+                result = ParsePNG(width, height, format1, format2, (header != 0x9C78 && header != 0xDA78) ? DecryptPNG(pngData) : pngData);
                 return true;
             }
             result = null;
@@ -100,14 +100,16 @@ namespace reWZ.WZProperties
             }
         }
 
-        private unsafe Bitmap ParsePNG(int width, int height, int format, byte[] data)
+        private unsafe Bitmap ParsePNG(int width, int height, int format1, int format2, byte[] data)
         {
             byte[] dec;
             using (MemoryStream @in = new MemoryStream(data, 2, data.Length - 2))
                 dec = WZBinaryReader.Inflate(@in);
             int decLen = dec.Length;
-            switch (format) {
-                case 1:
+            switch (format1) {
+                case 0x001:
+                    if (format2 != 0)
+                        goto default; // TODO: Handle format2 = 1, 2
                     byte[] argb = new byte[width*height*4];
                     fixed (byte* r = argb, t = dec) {
                         byte* s = r, u = t;
@@ -118,8 +120,10 @@ namespace reWZ.WZProperties
                     }
                     decLen *= 2;
                     dec = argb;
-                    goto case 2;
-                case 2:
+                    goto case 0x002;
+                case 0x002:
+                    if (format2 != 0)
+                        goto default;
                     if (decLen != width * height * 4)
                     {
                         Debug.WriteLine("Warning; dec.Length != 4wh; 32BPP");
@@ -129,22 +133,27 @@ namespace reWZ.WZProperties
                     }
                     _gcH = GCHandle.Alloc(dec, GCHandleType.Pinned);
                     return new Bitmap(width, height, width << 2, PixelFormat.Format32bppArgb, _gcH.AddrOfPinnedObject());
-                case 513:
-                    if (decLen != width * height * 2)
-                    {
-                        Debug.WriteLine("Warning; dec.Length != 2wh; 16BPP");
-                        byte[] proper = new byte[width*height*2];
-                        Buffer.BlockCopy(dec, 0, proper, 0, Math.Min(proper.Length, decLen));
-                        dec = proper;
+                case 0x201:
+                    switch (format2) {
+                        case 0:
+                            if (decLen != width*height*2) {
+                                Debug.WriteLine("Warning; dec.Length != 2wh; 16BPP");
+                                byte[] proper = new byte[width*height*2];
+                                Buffer.BlockCopy(dec, 0, proper, 0, Math.Min(proper.Length, decLen));
+                                dec = proper;
+                            }
+                            _gcH = GCHandle.Alloc(dec, GCHandleType.Pinned);
+                            return new Bitmap(width, height, width << 1, PixelFormat.Format16bppRgb565,
+                                _gcH.AddrOfPinnedObject());
+                        case 4:
+                            width >>= 4;
+                            height >>= 4;
+                            goto case 0;
                     }
-                    _gcH = GCHandle.Alloc(dec, GCHandleType.Pinned);
-                    return new Bitmap(width, height, width << 1, PixelFormat.Format16bppRgb565, _gcH.AddrOfPinnedObject());
-                case 517:
-                    width >>= 4;
-                    height >>= 4;
-                    goto case 513;
+                    goto default;
                 default:
-                    return WZFile.Die<Bitmap>(String.Format("Unknown bitmap format {0}.", format));
+                    Debug.WriteLine("Unknown bitmap type format1:{0} format2:{1}", format1, format2);
+                    return null;
             }
         }
 

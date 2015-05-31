@@ -160,6 +160,15 @@ namespace reWZ.WZProperties {
                             goto case 0;
                     }
                     goto default;
+                case 0x402:
+                    if (format2 != 0)
+                        goto default;
+                    byte[] rgba = new byte[width*height*4];
+                    fixed(byte* decP = dec)
+                    fixed(byte* rgbaP = rgba)
+                        UnDXT.DecompressImage(rgbaP, width, height, decP, UnDXT.kDxt3);
+                    _gcH = GCHandle.Alloc(rgba, GCHandleType.Pinned);
+                    return new Bitmap(width, height, width << 2, PixelFormat.Format32bppArgb, _gcH.AddrOfPinnedObject());
                 default:
                     Debug.WriteLine("Unknown bitmap type format1:{0} format2:{1}", format1, format2);
                     return null;

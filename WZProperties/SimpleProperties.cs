@@ -26,94 +26,82 @@
 // choice, provided that you also meet, for each linked independent module,
 // the terms and conditions of the license of that module. An independent
 // module is a module which is not derived from or based on reWZ.
+
 using System;
 using System.Drawing;
 using System.Linq;
 
-namespace reWZ.WZProperties
-{
+namespace reWZ.WZProperties {
     /// <summary>
-    ///   A struct used to represent nothing.
+    ///     A struct used to represent nothing.
     /// </summary>
-    public struct WZNothing
-    {}
+    public struct WZNothing {}
 
     /// <summary>
-    ///   Null.
+    ///     Null.
     /// </summary>
-    public sealed class WZNullProperty : WZProperty<WZNothing>
-    {
-        internal WZNullProperty(string name, WZObject parent, WZImage container) : base(name, parent, default(WZNothing), container, false, WZObjectType.Null)
-        {}
+    public sealed class WZNullProperty : WZProperty<WZNothing> {
+        internal WZNullProperty(string name, WZObject parent, WZImage container)
+            : base(name, parent, default(WZNothing), container, false, WZObjectType.Null) {}
     }
 
     /// <summary>
-    ///   An unsigned 16-bit integer property.
+    ///     An unsigned 16-bit integer property.
     /// </summary>
-    public sealed class WZUInt16Property : WZProperty<ushort>
-    {
+    public sealed class WZUInt16Property : WZProperty<ushort> {
         internal WZUInt16Property(string name, WZObject parent, WZBinaryReader reader, WZImage container)
-            : base(name, parent, reader.ReadUInt16(), container, false, WZObjectType.UInt16)
-        {}
+            : base(name, parent, reader.ReadUInt16(), container, false, WZObjectType.UInt16) {}
     }
 
     /// <summary>
-    ///   A compressed signed 32-bit integer property.
+    ///     A compressed signed 32-bit integer property.
     /// </summary>
-    public sealed class WZInt32Property : WZProperty<int>
-    {
+    public sealed class WZInt32Property : WZProperty<int> {
         internal WZInt32Property(string name, WZObject parent, WZBinaryReader reader, WZImage container)
-            : base(name, parent, reader.ReadWZInt(), container, false, WZObjectType.Int32)
-        {}
+            : base(name, parent, reader.ReadWZInt(), container, false, WZObjectType.Int32) {}
     }
 
     /// <summary>
-    ///   A compressed signed 64-bit integer property.
+    ///     A compressed signed 64-bit integer property.
     /// </summary>
     public sealed class WZInt64Property : WZProperty<long> {
         internal WZInt64Property(string name, WZObject parent, WZBinaryReader reader, WZImage container)
-            : base(name, parent, reader.ReadWZLong(), container, false, WZObjectType.Int64) { }
+            : base(name, parent, reader.ReadWZLong(), container, false, WZObjectType.Int64) {}
     }
 
     /// <summary>
-    ///   A floating point number with single precision property.
+    ///     A floating point number with single precision property.
     /// </summary>
-    public sealed class WZSingleProperty : WZProperty<Single>
-    {
+    public sealed class WZSingleProperty : WZProperty<float> {
         internal WZSingleProperty(string name, WZObject parent, WZBinaryReader reader, WZImage container)
-            : base(name, parent, ReadSingle(reader), container, false, WZObjectType.Single)
-        {}
+            : base(name, parent, ReadSingle(reader), container, false, WZObjectType.Single) {}
 
-        private static Single ReadSingle(WZBinaryReader reader)
-        {
+        private static float ReadSingle(WZBinaryReader reader) {
             byte t = reader.ReadByte();
-            return t == 0x80 ? reader.ReadSingle() : (t == 0 ? 0f : WZFile.Die<float>("Unknown byte while reading WZSingleProperty."));
+            return t == 0x80
+                ? reader.ReadSingle()
+                : (t == 0 ? 0f : WZFile.Die<float>("Unknown byte while reading WZSingleProperty."));
         }
     }
 
     /// <summary>
-    ///   A floating point number with double precision property.
+    ///     A floating point number with double precision property.
     /// </summary>
-    public sealed class WZDoubleProperty : WZProperty<Double>
-    {
+    public sealed class WZDoubleProperty : WZProperty<double> {
         internal WZDoubleProperty(string name, WZObject parent, WZBinaryReader reader, WZImage container)
-            : base(name, parent, reader.ReadDouble(), container, false, WZObjectType.Double)
-        {}
+            : base(name, parent, reader.ReadDouble(), container, false, WZObjectType.Double) {}
     }
 
     /// <summary>
-    ///   A string property.
+    ///     A string property.
     /// </summary>
-    public sealed class WZStringProperty : WZDelayedProperty<String>
-    {
+    public sealed class WZStringProperty : WZDelayedProperty<string> {
         internal WZStringProperty(string name, WZObject parent, WZImage container)
-            : base(name, parent, container, false, WZObjectType.String)
-        {}
+            : base(name, parent, container, false, WZObjectType.String) {}
 
-        internal override bool Parse(WZBinaryReader r, bool initial, out string result)
-        {
+        internal override bool Parse(WZBinaryReader r, bool initial, out string result) {
             if (!initial || (File._flag & WZReadSelection.EagerParseStrings) == WZReadSelection.EagerParseStrings) {
-                result = String.Intern(r.ReadWZStringBlock(Image._encrypted));
+                result = string.Intern(r.ReadWZStringBlock(Image._encrypted));
                 return true;
             }
             r.SkipWZStringBlock();
@@ -123,78 +111,72 @@ namespace reWZ.WZProperties
     }
 
     /// <summary>
-    ///   A point property, containing an X and Y value pair.
+    ///     A point property, containing an X and Y value pair.
     /// </summary>
-    public sealed class WZPointProperty : WZProperty<Point>
-    {
+    public sealed class WZPointProperty : WZProperty<Point> {
         internal WZPointProperty(string name, WZObject parent, WZBinaryReader wzbr, WZImage container)
-            : base(name, parent, new Point(wzbr.ReadWZInt(), wzbr.ReadWZInt()), container, false, WZObjectType.Point)
-        {}
+            : base(name, parent, new Point(wzbr.ReadWZInt(), wzbr.ReadWZInt()), container, false, WZObjectType.Point) {}
     }
 
     /// <summary>
-    ///   A link property, used to link to other properties in the WZ file.
+    ///     A link property, used to link to other properties in the WZ file.
     /// </summary>
-    public sealed class WZUOLProperty : WZProperty<String>
-    {
+    public sealed class WZUOLProperty : WZProperty<string> {
         internal WZUOLProperty(string name, WZObject parent, WZBinaryReader reader, WZImage container)
-            : base(name, parent, String.Intern(reader.ReadWZStringBlock(container._encrypted)), container, false, WZObjectType.UOL)
-        {}
+            : base(
+                name, parent, string.Intern(reader.ReadWZStringBlock(container._encrypted)), container, false,
+                WZObjectType.UOL) {}
 
         /// <summary>
-        ///   Resolves the link once.
+        ///     Resolves the link once.
         /// </summary>
         /// <returns> The WZ object that this link refers to. </returns>
-        public WZObject Resolve()
-        {
-            return Value.Split('/').Where(node => node != ".").Aggregate(Parent, (current, node) => node == ".." ? current.Parent : current[node]);
+        public WZObject Resolve() {
+            return Value.Split('/')
+                        .Where(node => node != ".")
+                        .Aggregate(Parent, (current, node) => node == ".." ? current.Parent : current[node]);
         }
 
         /// <summary>
-        ///   Resolves the link recursively, repeatedly resolving links until an object is reached.
+        ///     Resolves the link recursively, repeatedly resolving links until an object is reached.
         /// </summary>
         /// <returns> The non-link WZ object that this link refers to. </returns>
-        public WZObject ResolveFully()
-        {
+        public WZObject ResolveFully() {
             WZObject ret = this;
             while (ret is WZUOLProperty)
-                ret = ((WZUOLProperty)ret).Resolve();
+                ret = ((WZUOLProperty) ret).Resolve();
             return ret;
         }
     }
 
     /// <summary>
-    ///   A sound property.
+    ///     A sound property.
     /// </summary>
-    public sealed class WZAudioProperty : WZDelayedProperty<byte[]>, IDisposable
-    {
+    public sealed class WZAudioProperty : WZDelayedProperty<byte[]>, IDisposable {
         internal WZAudioProperty(string name, WZObject parent, WZImage container)
-            : base(name, parent, container, false, WZObjectType.Audio)
-        {}
+            : base(name, parent, container, false, WZObjectType.Audio) {}
 
-        internal override bool Parse(WZBinaryReader r, bool initial, out byte[] result)
-        {
+        /// <summary>
+        ///     Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        /// <filterpriority>2</filterpriority>
+        public void Dispose() {
+            _parsed = false;
+            _value = null;
+        }
+
+        internal override bool Parse(WZBinaryReader r, bool initial, out byte[] result) {
             r.Skip(1);
             int blockLen = r.ReadWZInt(); // sound data length
             r.ReadWZInt(); // sound duration
             //r.Skip(82); // header [82 bytes]
             if (!initial || (File._flag & WZReadSelection.EagerParseAudio) == WZReadSelection.EagerParseAudio) {
-                result = r.ReadBytes(blockLen+82);
+                result = r.ReadBytes(blockLen + 82);
                 return true; // sound data 
             }
-            r.Skip(blockLen+82);
+            r.Skip(blockLen + 82);
             result = null;
             return false;
-        }
-
-        /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-        /// </summary>
-        /// <filterpriority>2</filterpriority>
-        public void Dispose()
-        {
-            _parsed = false;
-            _value = null;
         }
     }
 }

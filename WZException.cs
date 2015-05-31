@@ -26,17 +26,15 @@
 // choice, provided that you also meet, for each linked independent module,
 // the terms and conditions of the license of that module. An independent
 // module is a module which is not derived from or based on reWZ.
+
 using System;
 
-namespace reWZ
-{
+namespace reWZ {
     /// <summary>
-    ///   An exception thrown when a parsing error occurs.
+    ///     An exception thrown when a parsing error occurs.
     /// </summary>
     [Serializable]
-    public class WZException : Exception
-    {
-        internal WZException(string message = "", Exception innerException = null) : base(message, innerException)
-        {}
+    public class WZException : Exception {
+        internal WZException(string message = "", Exception innerException = null) : base(message, innerException) {}
     }
 }

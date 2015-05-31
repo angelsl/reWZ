@@ -26,19 +26,31 @@
 // choice, provided that you also meet, for each linked independent module,
 // the terms and conditions of the license of that module. An independent
 // module is a module which is not derived from or based on reWZ.
+
 using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace reWZ
-{
-    internal sealed class WZAES
-    {
+namespace reWZ {
+    internal sealed class WZAES {
         internal const uint OffsetKey = 0x581C3F6D;
-        private static readonly byte[] AESKey = {0x13, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0xB4, 0x00, 0x00, 0x00, 0x1B, 0x00, 0x00, 0x00, 0x0F, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00, 0x00, 0x52, 0x00, 0x00, 0x00};
-        private static readonly byte[] GMSIV = {0x4D, 0x23, 0xC7, 0x2B, 0x4D, 0x23, 0xC7, 0x2B, 0x4D, 0x23, 0xC7, 0x2B, 0x4D, 0x23, 0xC7, 0x2B};
-        private static readonly byte[] KMSIV = {0xB9, 0x7D, 0x63, 0xE9, 0xB9, 0x7D, 0x63, 0xE9, 0xB9, 0x7D, 0x63, 0xE9, 0xB9, 0x7D, 0x63, 0xE9};
+
+        private static readonly byte[] AESKey = {
+            0x13, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00,
+            0xB4, 0x00, 0x00, 0x00, 0x1B, 0x00, 0x00, 0x00, 0x0F, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00, 0x00, 0x52, 0x00,
+            0x00, 0x00
+        };
+
+        private static readonly byte[] GMSIV = {
+            0x4D, 0x23, 0xC7, 0x2B, 0x4D, 0x23, 0xC7, 0x2B, 0x4D, 0x23, 0xC7, 0x2B,
+            0x4D, 0x23, 0xC7, 0x2B
+        };
+
+        private static readonly byte[] KMSIV = {
+            0xB9, 0x7D, 0x63, 0xE9, 0xB9, 0x7D, 0x63, 0xE9, 0xB9, 0x7D, 0x63, 0xE9,
+            0xB9, 0x7D, 0x63, 0xE9
+        };
 
         private readonly byte[] _asciiEncKey;
         private readonly byte[] _asciiKey;
@@ -46,8 +58,7 @@ namespace reWZ
         private readonly byte[] _unicodeKey;
         private readonly byte[] _wzKey;
 
-        internal WZAES(WZVariant version)
-        {
+        internal WZAES(WZVariant version) {
             _wzKey = GetWZKey(version);
             _asciiKey = new byte[_wzKey.Length];
             _unicodeKey = new byte[_wzKey.Length];
@@ -57,21 +68,20 @@ namespace reWZ
                 byte mask = 0xAA;
                 for (int i = 0; i < _wzKey.Length; ++i, ++mask) {
                     _asciiKey[i] = mask;
-                    _asciiEncKey[i] = (byte)(_wzKey[i] ^ mask);
+                    _asciiEncKey[i] = (byte) (_wzKey[i] ^ mask);
                 }
                 ushort umask = 0xAAAA;
                 for (int i = 0; i < _wzKey.Length/2; i += 2, ++umask) {
-                    _unicodeKey[i] = (byte)(umask & 0xFF);
-                    _unicodeKey[i+1] = (byte)((umask & 0xFF00) >> 8);
-                    _unicodeEncKey[i] = (byte)(_wzKey[i] ^ _unicodeKey[i]);
-                    _unicodeEncKey[i + 1] = (byte)(_wzKey[i + 1] ^ _unicodeKey[i + 1]);
+                    _unicodeKey[i] = (byte) (umask & 0xFF);
+                    _unicodeKey[i + 1] = (byte) ((umask & 0xFF00) >> 8);
+                    _unicodeEncKey[i] = (byte) (_wzKey[i] ^ _unicodeKey[i]);
+                    _unicodeEncKey[i + 1] = (byte) (_wzKey[i + 1] ^ _unicodeKey[i + 1]);
                 }
             }
         }
 
-        private static byte[] GetWZKey(WZVariant version)
-        {
-            switch ((int)version) {
+        private static byte[] GetWZKey(WZVariant version) {
+            switch ((int) version) {
                 case 0:
                     return GenerateKey(KMSIV, AESKey);
                 case 1:
@@ -83,8 +93,7 @@ namespace reWZ
             }
         }
 
-        private static byte[] GenerateKey(byte[] iv, byte[] aesKey)
-        {
+        private static byte[] GenerateKey(byte[] iv, byte[] aesKey) {
             using (MemoryStream memStream = new MemoryStream(0x10000))
             using (AesManaged aem = new AesManaged {KeySize = 256, Key = aesKey, Mode = CipherMode.ECB})
             using (CryptoStream cStream = new CryptoStream(memStream, aem.CreateEncryptor(), CryptoStreamMode.Write)) {
@@ -96,11 +105,12 @@ namespace reWZ
             }
         }
 
-        internal string DecryptASCIIString(byte[] asciiBytes, bool encrypted = true)
-        {
+        internal string DecryptASCIIString(byte[] asciiBytes, bool encrypted = true) {
             int len = asciiBytes.Length;
             if (len > _asciiEncKey.Length)
-                throw new NotSupportedException(String.Format("Cannot decrypt ASCII string longer than {0} characters. Please report this!", _asciiEncKey.Length));
+                throw new NotSupportedException(
+                    string.Format("Cannot decrypt ASCII string longer than {0} characters. Please report this!",
+                        _asciiEncKey.Length));
             //char[] ret = new char[len];
             byte[] key = encrypted ? _asciiEncKey : _asciiKey;
             for (int i = 0; i < len; ++i)
@@ -108,11 +118,12 @@ namespace reWZ
             return Encoding.ASCII.GetString(asciiBytes);
         }
 
-        internal string DecryptUnicodeString(byte[] ushortChars, bool encrypted = true)
-        {
+        internal string DecryptUnicodeString(byte[] ushortChars, bool encrypted = true) {
             int len = ushortChars.Length;
             if (len > _unicodeEncKey.Length)
-                throw new NotSupportedException(String.Format("Cannot decrypt UTF-16 string longer than {0} characters. Please report this!", _unicodeEncKey.Length));
+                throw new NotSupportedException(
+                    string.Format("Cannot decrypt UTF-16 string longer than {0} characters. Please report this!",
+                        _unicodeEncKey.Length));
             //char[] ret = new char[len];
             byte[] key = encrypted ? _unicodeEncKey : _unicodeKey;
             for (int i = 0; i < len; ++i)
@@ -120,8 +131,7 @@ namespace reWZ
             return Encoding.Unicode.GetString(ushortChars);
         }
 
-        internal unsafe byte[] DecryptBytes(byte[] bytes)
-        {
+        internal unsafe byte[] DecryptBytes(byte[] bytes) {
             fixed (byte* c = bytes, k = _wzKey) {
                 byte* d = c, l = k;
                 for (int i = 0; i < bytes.Length; ++i)
@@ -132,62 +142,61 @@ namespace reWZ
     }
 
     /// <summary>
-    ///   This enum is used to specify the WZ key to be used.
+    ///     This enum is used to specify the WZ key to be used.
     /// </summary>
-    public enum WZVariant
-    {
+    public enum WZVariant {
         /// <summary>
-        ///   MapleStory SEA
+        ///     MapleStory SEA
         /// </summary>
         MSEA = 0,
 
         /// <summary>
-        ///   Korea MapleStory
+        ///     Korea MapleStory
         /// </summary>
         KMS = 0,
 
         /// <summary>
-        ///   Korea MapleStory (Tespia)
+        ///     Korea MapleStory (Tespia)
         /// </summary>
         KMST = 0,
 
         /// <summary>
-        ///   Japan MapleStory
+        ///     Japan MapleStory
         /// </summary>
         JMS = 0,
 
         /// <summary>
-        ///   Japan MapleStory (Tespia)
+        ///     Japan MapleStory (Tespia)
         /// </summary>
         JMST = 0,
 
         /// <summary>
-        ///   Europe MapleStory
+        ///     Europe MapleStory
         /// </summary>
         EMS = 0,
 
         /// <summary>
-        ///   Global MapleStory
+        ///     Global MapleStory
         /// </summary>
         GMS = 1,
 
         /// <summary>
-        ///   Global MapleStory (Tespia)
+        ///     Global MapleStory (Tespia)
         /// </summary>
         GMST = 1,
 
         /// <summary>
-        ///   Taiwan MapleStory
+        ///     Taiwan MapleStory
         /// </summary>
         TMS = 1,
 
         /// <summary>
-        ///   Brazil MapleStory
+        ///     Brazil MapleStory
         /// </summary>
         BMS = 2,
 
         /// <summary>
-        ///   Classic MapleStory (Data.wz)
+        ///     Classic MapleStory (Data.wz)
         /// </summary>
         Classic = 2
     }

@@ -26,6 +26,7 @@
 // choice, provided that you also meet, for each linked independent module,
 // the terms and conditions of the license of that module. An independent
 // module is a module which is not derived from or based on reWZ.
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -33,13 +34,11 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 
-namespace reWZ.WZProperties
-{
+namespace reWZ.WZProperties {
     /// <summary>
-    ///   An object in a WZ file.
+    ///     An object in a WZ file.
     /// </summary>
-    public abstract class WZObject : IEnumerable<WZObject>
-    {
+    public abstract class WZObject : IEnumerable<WZObject> {
         private readonly ChildCollection _backing;
         private readonly bool _canContainChildren;
         private readonly WZFile _file;
@@ -47,18 +46,18 @@ namespace reWZ.WZProperties
         private readonly WZObject _parent;
         private readonly WZObjectType _type;
 
-        internal WZObject(string name, WZObject parent, WZFile container, bool children, WZObjectType type)
-        {
-            _name = String.Intern(name);
+        internal WZObject(string name, WZObject parent, WZFile container, bool children, WZObjectType type) {
+            _name = string.Intern(name);
             _parent = parent;
             _file = container;
             _canContainChildren = children;
-            if (_canContainChildren) _backing = new ChildCollection();
+            if (_canContainChildren)
+                _backing = new ChildCollection();
             _type = type;
         }
 
         /// <summary>
-        ///   The name of the WZ object.
+        ///     The name of the WZ object.
         /// </summary>
         public string Name
         {
@@ -66,7 +65,7 @@ namespace reWZ.WZProperties
         }
 
         /// <summary>
-        ///   The parent of this WZ object, or <code>null</code> if this is the main WZ directory.
+        ///     The parent of this WZ object, or <code>null</code> if this is the main WZ directory.
         /// </summary>
         public WZObject Parent
         {
@@ -74,7 +73,7 @@ namespace reWZ.WZProperties
         }
 
         /// <summary>
-        ///   The absolute path to this object.
+        ///     The absolute path to this object.
         /// </summary>
         public string Path
         {
@@ -82,7 +81,7 @@ namespace reWZ.WZProperties
         }
 
         /// <summary>
-        ///   The WZ file containing this object.
+        ///     The WZ file containing this object.
         /// </summary>
         public WZFile File
         {
@@ -90,14 +89,15 @@ namespace reWZ.WZProperties
         }
 
         /// <summary>
-        ///   The type of this object.
+        ///     The type of this object.
         /// </summary>
-        public WZObjectType Type {
+        public WZObjectType Type
+        {
             get { return _type; }
         }
 
         /// <summary>
-        ///   Returns the child with the name <paramref name="childName" /> .
+        ///     Returns the child with the name <paramref name="childName" /> .
         /// </summary>
         /// <param name="childName"> The name of the child to return. </param>
         /// <returns> The retrieved child. </returns>
@@ -105,111 +105,110 @@ namespace reWZ.WZProperties
         {
             get
             {
-                if (!_canContainChildren) throw new NotSupportedException("This WZObject cannot contain children.");
+                if (!_canContainChildren)
+                    throw new NotSupportedException("This WZObject cannot contain children.");
                 return _backing[childName];
             }
         }
 
         /// <summary>
-        ///   Returns the number of children this property contains.
+        ///     Returns the number of children this property contains.
         /// </summary>
         public virtual int ChildCount
         {
-            get
-            {
-                return _canContainChildren ? _backing.Count : 0;
-            }
+            get { return _canContainChildren ? _backing.Count : 0; }
         }
-
-        #region IEnumerable<WZObject> Members
 
         /// <summary>
-        ///   Returns an enumerator that iterates through the children in this property.
-        /// </summary>
-        /// <returns> A <see cref="T:System.Collections.Generic.IEnumerator`1" /> that can be used to iterate through the children in this property. </returns>
-        public virtual IEnumerator<WZObject> GetEnumerator()
-        {
-            return _canContainChildren ? _backing.GetEnumerator() : Enumerable.Empty<WZObject>().GetEnumerator();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
-
-        #endregion
-
-        /// <summary>
-        ///   Checks if this property has a child with name <paramref name="name" /> .
+        ///     Checks if this property has a child with name <paramref name="name" /> .
         /// </summary>
         /// <param name="name"> The name of the child to locate. </param>
         /// <returns> true if this property has such a child, false otherwise or if this property cannot contain children. </returns>
-        public virtual bool HasChild(string name)
-        {
+        public virtual bool HasChild(string name) {
             return _canContainChildren && _backing.Contains(name);
         }
 
         /// <summary>
-        ///   Tries to cast this to a <see cref="WZProperty{T}" /> and returns its value, or throws an exception if the cast is invalid.
+        ///     Tries to cast this to a <see cref="WZProperty{T}" /> and returns its value, or throws an exception if the cast is
+        ///     invalid.
         /// </summary>
         /// <typeparam name="T"> The type of the value to return. </typeparam>
-        /// <exception cref="System.InvalidCastException">This WZ object is not a
-        ///   <see cref="WZProperty{T}" />
-        ///   .</exception>
+        /// <exception cref="System.InvalidCastException">
+        ///     This WZ object is not a
+        ///     <see cref="WZProperty{T}" />
+        ///     .
+        /// </exception>
         /// <returns> The value enclosed by this WZ property. </returns>
-        public T ValueOrDie<T>()
-        {
-            return ((WZProperty<T>)this).Value;
+        public T ValueOrDie<T>() {
+            return ((WZProperty<T>) this).Value;
         }
 
         /// <summary>
-        ///   Tries to cast this to a <see cref="WZProperty{T}" /> and returns its value, or returns a default value if the cast is invalid.
+        ///     Tries to cast this to a <see cref="WZProperty{T}" /> and returns its value, or returns a default value if the cast
+        ///     is invalid.
         /// </summary>
         /// <param name="default"> The value to return if the cast is unsuccessful. </param>
         /// <typeparam name="T"> The type of the value to return. </typeparam>
         /// <returns> The value enclosed by this WZ property, or the default value. </returns>
-        public T ValueOrDefault<T>(T @default)
-        {
+        public T ValueOrDefault<T>(T @default) {
             WZProperty<T> ret = this as WZProperty<T>;
             return ret != null ? ret.Value : @default;
         }
 
         /// <summary>
-        ///   Resolves a path in the form "/a/b/c/.././d/e/f/".
+        ///     Resolves a path in the form "/a/b/c/.././d/e/f/".
         /// </summary>
         /// <param name="path"> The path to resolve. </param>
         /// <exception cref="System.Collections.Generic.KeyNotFoundException">The path has an invalid node.</exception>
         /// <returns> The object located at the path. </returns>
-        public WZObject ResolvePath(string path)
-        {
-            return (path.StartsWith("/") ? path.Substring(1) : path).Split('/').Where(node => node != ".").Aggregate(this, (current, node) => node == ".." ? current.Parent : current[node]);
+        public WZObject ResolvePath(string path) {
+            return
+                (path.StartsWith("/") ? path.Substring(1) : path).Split('/')
+                                                                 .Where(node => node != ".")
+                                                                 .Aggregate(this,
+                                                                     (current, node) =>
+                                                                         node == ".." ? current.Parent : current[node]);
         }
 
-        internal void Add(WZObject o)
-        {
+        internal void Add(WZObject o) {
             _backing.Add(o);
         }
 
-        private string ConstructPath()
-        {
+        private string ConstructPath() {
             StringBuilder s = new StringBuilder(_name);
             WZObject p = this;
             while ((p = p.Parent) != null)
                 s.Insert(0, "/").Insert(0, p.Name);
-            return String.Intern(s.ToString());
+            return string.Intern(s.ToString());
         }
 
         #region Nested type: ChildCollection
 
-        private class ChildCollection : KeyedCollection<string, WZObject>
-        {
-            internal ChildCollection() : base(null, 4)
-            {}
+        private class ChildCollection : KeyedCollection<string, WZObject> {
+            internal ChildCollection() : base(null, 4) {}
 
-            protected override string GetKeyForItem(WZObject item)
-            {
+            protected override string GetKeyForItem(WZObject item) {
                 return item.Name;
             }
+        }
+
+        #endregion
+
+        #region IEnumerable<WZObject> Members
+
+        /// <summary>
+        ///     Returns an enumerator that iterates through the children in this property.
+        /// </summary>
+        /// <returns>
+        ///     A <see cref="T:System.Collections.Generic.IEnumerator`1" /> that can be used to iterate through the children
+        ///     in this property.
+        /// </returns>
+        public virtual IEnumerator<WZObject> GetEnumerator() {
+            return _canContainChildren ? _backing.GetEnumerator() : Enumerable.Empty<WZObject>().GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator() {
+            return GetEnumerator();
         }
 
         #endregion

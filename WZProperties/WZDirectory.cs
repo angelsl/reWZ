@@ -26,22 +26,20 @@
 // choice, provided that you also meet, for each linked independent module,
 // the terms and conditions of the license of that module. An independent
 // module is a module which is not derived from or based on reWZ.
+
 using System.IO;
 
-namespace reWZ.WZProperties
-{
+namespace reWZ.WZProperties {
     /// <summary>
-    ///   A directory in a WZ file. This cannot be located inside an Image file.
+    ///     A directory in a WZ file. This cannot be located inside an Image file.
     /// </summary>
-    public sealed class WZDirectory : WZObject
-    {
-        internal WZDirectory(string name, WZObject parent, WZFile file, WZBinaryReader wzbr, long offset) : base(name, parent, file, true, WZObjectType.Directory)
-        {
+    public sealed class WZDirectory : WZObject {
+        internal WZDirectory(string name, WZObject parent, WZFile file, WZBinaryReader wzbr, long offset)
+            : base(name, parent, file, true, WZObjectType.Directory) {
             Parse(wzbr, offset);
         }
 
-        private void Parse(WZBinaryReader wzbr, long offset)
-        {
+        private void Parse(WZBinaryReader wzbr, long offset) {
             lock (File._lock) {
                 wzbr.Seek(offset);
                 int entryCount = wzbr.ReadWZInt();
@@ -69,7 +67,8 @@ namespace reWZ.WZProperties
                             WZFile.Die("Unknown object type in WzDirectory.");
                             break;
                     }
-                    if (name == null) WZFile.Die("Failed to read WZDirectory entry name.");
+                    if (name == null)
+                        WZFile.Die("Failed to read WZDirectory entry name.");
                     int size = wzbr.ReadWZInt();
                     wzbr.ReadWZInt();
                     uint woffset = wzbr.ReadWZOffset(File._fstart);
@@ -79,11 +78,23 @@ namespace reWZ.WZProperties
                                              Add(new WZDirectory(name, this, File, wzbr, woffset));
                                              break;
                                          case 4:
-                                             if (((File._flag & WZReadSelection.EagerParseCanvas) == WZReadSelection.EagerParseCanvas || (File._flag & WZReadSelection.EagerParseAudio) == WZReadSelection.EagerParseAudio || (File._flag & WZReadSelection.EagerParseStrings) == WZReadSelection.EagerParseStrings) && !(File._file is MemoryStream) && !((File._flag & WZReadSelection.LowMemory) == WZReadSelection.LowMemory))
-                                                 Add(new WZImage(name, this, File, new WZBinaryReader(File.GetSubbytes(woffset, size), File._aes, wzbr.VersionHash),
-                                                                 () => new WZBinaryReader(File.GetSubstream(woffset, size), File._aes, wzbr.VersionHash)));
+                                             if (((File._flag & WZReadSelection.EagerParseCanvas) ==
+                                                  WZReadSelection.EagerParseCanvas ||
+                                                  (File._flag & WZReadSelection.EagerParseAudio) ==
+                                                  WZReadSelection.EagerParseAudio ||
+                                                  (File._flag & WZReadSelection.EagerParseStrings) ==
+                                                  WZReadSelection.EagerParseStrings) && !(File._file is MemoryStream) &&
+                                                 !((File._flag & WZReadSelection.LowMemory) == WZReadSelection.LowMemory))
+                                                 Add(new WZImage(name, this, File,
+                                                     new WZBinaryReader(File.GetSubbytes(woffset, size), File._aes,
+                                                         wzbr.VersionHash),
+                                                     () =>
+                                                         new WZBinaryReader(File.GetSubstream(woffset, size), File._aes,
+                                                             wzbr.VersionHash)));
                                              else
-                                                 Add(new WZImage(name, this, File, new WZBinaryReader(File.GetSubstream(woffset, size), File._aes, wzbr.VersionHash)));
+                                                 Add(new WZImage(name, this, File,
+                                                     new WZBinaryReader(File.GetSubstream(woffset, size), File._aes,
+                                                         wzbr.VersionHash)));
 
                                              break;
                                      }

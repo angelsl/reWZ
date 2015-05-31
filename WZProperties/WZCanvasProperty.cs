@@ -26,6 +26,7 @@
 // choice, provided that you also meet, for each linked independent module,
 // the terms and conditions of the license of that module. An independent
 // module is a module which is not derived from or based on reWZ.
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -34,31 +35,39 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Runtime.InteropServices;
 
-namespace reWZ.WZProperties
-{
+namespace reWZ.WZProperties {
     /// <summary>
-    ///   A bitmap property, containing an image, and children.
-    ///   Please dispose any parsed Canvas properties once they are no longer needed, and before the containing WZ file is disposed.
+    ///     A bitmap property, containing an image, and children.
+    ///     Please dispose any parsed Canvas properties once they are no longer needed, and before the containing WZ file is
+    ///     disposed.
     /// </summary>
-    public sealed class WZCanvasProperty : WZDelayedProperty<Bitmap>, IDisposable
-    {
+    public sealed class WZCanvasProperty : WZDelayedProperty<Bitmap>, IDisposable {
         private GCHandle _gcH;
 
         internal WZCanvasProperty(string name, WZObject parent, WZBinaryReader br, WZImage container)
-            : base(name, parent, container, true, WZObjectType.Canvas)
-        {}
+            : base(name, parent, container, true, WZObjectType.Canvas) {}
 
         /// <summary>
-        /// Destructor.
+        ///     Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
-        ~WZCanvasProperty()
-        {
+        public void Dispose() {
+            if (!_parsed || _value == null)
+                return;
+            _value.Dispose();
+            _gcH.Free();
+            _parsed = false;
+        }
+
+        /// <summary>
+        ///     Destructor.
+        /// </summary>
+        ~WZCanvasProperty() {
             Dispose();
         }
 
-        internal override bool Parse(WZBinaryReader br, bool initial, out Bitmap result)
-        {
-            bool skip = (File._flag & WZReadSelection.NeverParseCanvas) == WZReadSelection.NeverParseCanvas, eager = (File._flag & WZReadSelection.EagerParseCanvas) == WZReadSelection.EagerParseCanvas;
+        internal override bool Parse(WZBinaryReader br, bool initial, out Bitmap result) {
+            bool skip = (File._flag & WZReadSelection.NeverParseCanvas) == WZReadSelection.NeverParseCanvas,
+                 eager = (File._flag & WZReadSelection.EagerParseCanvas) == WZReadSelection.EagerParseCanvas;
             if (skip && eager) {
                 result = null;
                 return WZFile.Die<bool>("Both NeverParseCanvas and EagerParseCanvas are set.");
@@ -67,7 +76,8 @@ namespace reWZ.WZProperties
             if (br.ReadByte() == 1) {
                 br.Skip(2);
                 List<WZObject> l = WZExtendedParser.ParsePropertyList(br, this, Image, Image._encrypted);
-                if (ChildCount == 0) l.ForEach(Add);
+                if (ChildCount == 0)
+                    l.ForEach(Add);
             }
             int width = br.ReadWZInt(); // width
             int height = br.ReadWZInt(); // height
@@ -75,20 +85,21 @@ namespace reWZ.WZProperties
             int format2 = br.ReadByte(); // format 2
             br.Skip(4);
             int blockLen = br.ReadInt32();
-            if ((initial || skip) && !eager) br.Skip(blockLen); // block Len & png data
+            if ((initial || skip) && !eager)
+                br.Skip(blockLen); // block Len & png data
             else {
                 br.Skip(1);
                 ushort header = br.PeekFor(() => br.ReadUInt16());
                 byte[] pngData = br.ReadBytes(blockLen - 1);
-                result = ParsePNG(width, height, format1, format2, (header != 0x9C78 && header != 0xDA78) ? DecryptPNG(pngData) : pngData);
+                result = ParsePNG(width, height, format1, format2,
+                    (header != 0x9C78 && header != 0xDA78) ? DecryptPNG(pngData) : pngData);
                 return true;
             }
             result = null;
             return skip;
         }
 
-        private byte[] DecryptPNG(byte[] @in)
-        {
+        private byte[] DecryptPNG(byte[] @in) {
             using (MemoryStream @sIn = new MemoryStream(@in, false))
             using (BinaryReader @sBr = new BinaryReader(@sIn))
             using (MemoryStream @sOut = new MemoryStream(@in.Length)) {
@@ -100,8 +111,7 @@ namespace reWZ.WZProperties
             }
         }
 
-        private unsafe Bitmap ParsePNG(int width, int height, int format1, int format2, byte[] data)
-        {
+        private unsafe Bitmap ParsePNG(int width, int height, int format1, int format2, byte[] data) {
             byte[] dec;
             using (MemoryStream @in = new MemoryStream(data, 2, data.Length - 2))
                 dec = WZBinaryReader.Inflate(@in);
@@ -114,8 +124,8 @@ namespace reWZ.WZProperties
                     fixed (byte* r = argb, t = dec) {
                         byte* s = r, u = t;
                         for (int i = 0; i < decLen; i++) {
-                            *(s++) = (byte)(((*u) & 0x0F)*0x11);
-                            *(s++) = (byte)(((*(u++) & 0xF0) >> 4)*0x11);
+                            *(s++) = (byte) (((*u) & 0x0F)*0x11);
+                            *(s++) = (byte) (((*(u++) & 0xF0) >> 4)*0x11);
                         }
                     }
                     decLen *= 2;
@@ -124,8 +134,7 @@ namespace reWZ.WZProperties
                 case 0x002:
                     if (format2 != 0)
                         goto default;
-                    if (decLen != width * height * 4)
-                    {
+                    if (decLen != width*height*4) {
                         Debug.WriteLine("Warning; dec.Length != 4wh; 32BPP");
                         byte[] proper = new byte[width*height*4];
                         Buffer.BlockCopy(dec, 0, proper, 0, Math.Min(proper.Length, decLen));
@@ -155,17 +164,6 @@ namespace reWZ.WZProperties
                     Debug.WriteLine("Unknown bitmap type format1:{0} format2:{1}", format1, format2);
                     return null;
             }
-        }
-
-        /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-        /// </summary>
-        public void Dispose()
-        {
-            if (!_parsed || _value == null) return;
-            _value.Dispose();
-            _gcH.Free();
-            _parsed = false;
         }
     }
 }

@@ -26,34 +26,32 @@
 // choice, provided that you also meet, for each linked independent module,
 // the terms and conditions of the license of that module. An independent
 // module is a module which is not derived from or based on reWZ.
-using System;
+
 using System.Collections.Generic;
 
-namespace reWZ.WZProperties
-{
+namespace reWZ.WZProperties {
     /// <summary>
-    /// Ab abstract class representing a WZ property that contains a value of type <typeparamref name="T"/> and is lazy-loaded.
+    ///     Ab abstract class representing a WZ property that contains a value of type <typeparamref name="T" /> and is
+    ///     lazy-loaded.
     /// </summary>
     /// <typeparam name="T">The type that this property contains.</typeparam>
-    public abstract class WZDelayedProperty<T> : WZProperty<T>
-    {
+    public abstract class WZDelayedProperty<T> : WZProperty<T> {
         private readonly long _offset;
+
         /// <summary>
-        /// Whether the delayed property has been parsed.
+        ///     Whether the delayed property has been parsed.
         /// </summary>
         protected bool _parsed;
 
-        internal WZDelayedProperty(string name, WZObject parent, WZImage container, bool children, WZObjectType type) : base(name, parent, default(T), container, children, type)
-        {
+        internal WZDelayedProperty(string name, WZObject parent, WZImage container, bool children, WZObjectType type)
+            : base(name, parent, default(T), container, children, type) {
             _offset = container._r.BaseStream.Position;
             lock (File._lock)
                 _parsed = Parse(container._r, true, out _value);
         }
 
-        internal abstract bool Parse(WZBinaryReader r, bool initial, out T result);
-
         /// <summary>
-        ///   The value held by this WZ property.
+        ///     The value held by this WZ property.
         /// </summary>
         public override T Value
         {
@@ -61,56 +59,50 @@ namespace reWZ.WZProperties
             {
                 if (!_parsed)
                     lock (File._lock)
-                        _parsed = Image._r.PeekFor(() =>
-                                                   {
+                        _parsed = Image._r.PeekFor(() => {
                                                        Image._r.Seek(_offset);
                                                        return Parse(Image._r, false, out _value);
                                                    });
                 return _value;
             }
         }
+
+        internal abstract bool Parse(WZBinaryReader r, bool initial, out T result);
     }
 
     /// <summary>
-    ///   An abstract class representing a WZ property that contains a value of type <typeparamref name="T" /> .
+    ///     An abstract class representing a WZ property that contains a value of type <typeparamref name="T" /> .
     /// </summary>
     /// <typeparam name="T"> The type that this property contains. </typeparam>
-    public abstract class WZProperty<T> : WZObject
-    {
+    public abstract class WZProperty<T> : WZObject {
         private readonly WZImage _image;
         internal T _value;
 
-        internal WZProperty(string name, WZObject parent, T value, WZImage container, bool children, WZObjectType type) : base(name, parent, container.File, children, type)
-        {
+        internal WZProperty(string name, WZObject parent, T value, WZImage container, bool children, WZObjectType type)
+            : base(name, parent, container.File, children, type) {
             _value = value;
             _image = container;
         }
 
         /// <summary>
-        ///   The value held by this WZ property.
+        ///     The value held by this WZ property.
         /// </summary>
         public virtual T Value
         {
-            get
-            {
-                return _value;
-            }
+            get { return _value; }
         }
 
         /// <summary>
-        ///   The image that this property resides in.
+        ///     The image that this property resides in.
         /// </summary>
         public WZImage Image
         {
             get { return _image; }
         }
-        
     }
 
-    internal static class WZExtendedParser
-    {
-        internal static List<WZObject> ParsePropertyList(WZBinaryReader r, WZObject parent, WZImage f, bool encrypted)
-        {
+    internal static class WZExtendedParser {
+        internal static List<WZObject> ParsePropertyList(WZBinaryReader r, WZObject parent, WZImage f, bool encrypted) {
             lock (f.File._lock) {
                 int num = r.ReadWZInt();
                 List<WZObject> ret = new List<WZObject>(num);
@@ -147,15 +139,17 @@ namespace reWZ.WZProperties
                             r.Skip(blockLen);
                             break;
                         default:
-                            return WZFile.Die<List<WZObject>>(String.Format("Unknown property type {0} at ParsePropertyList", type));
+                            return
+                                WZFile.Die<List<WZObject>>(
+                                    string.Format("Unknown property type {0} at ParsePropertyList", type));
                     }
                 }
                 return ret;
             }
         }
 
-        internal static WZObject ParseExtendedProperty(string name, WZBinaryReader r, WZObject parent, WZImage f, bool encrypted)
-        {
+        internal static WZObject ParseExtendedProperty(string name, WZBinaryReader r, WZObject parent, WZImage f,
+                                                       bool encrypted) {
             lock (f.File._lock) {
                 string type = r.ReadWZStringBlock(encrypted);
                 switch (type) {
@@ -174,7 +168,7 @@ namespace reWZ.WZProperties
                         r.Skip(1);
                         return new WZUOLProperty(name, parent, r, f);
                     default:
-                        return WZFile.Die<WZObject>(String.Format("Unknown ExtendedProperty type \"{0}\"", type));
+                        return WZFile.Die<WZObject>(string.Format("Unknown ExtendedProperty type \"{0}\"", type));
                 }
             }
         }

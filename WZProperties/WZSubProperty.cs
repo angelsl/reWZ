@@ -26,32 +26,30 @@
 // choice, provided that you also meet, for each linked independent module,
 // the terms and conditions of the license of that module. An independent
 // module is a module which is not derived from or based on reWZ.
+
 using System.Globalization;
 
-namespace reWZ.WZProperties
-{
+namespace reWZ.WZProperties {
     /// <summary>
-    ///   A directory in a WZ image. This cannot be located outside an image.
+    ///     A directory in a WZ image. This cannot be located outside an image.
     /// </summary>
-    public sealed class WZSubProperty : WZProperty<WZNothing>
-    {
-        internal WZSubProperty(string name, WZObject parent, WZBinaryReader r, WZImage container) : base(name, parent, default(WZNothing), container, true, WZObjectType.SubProperty)
-        {
+    public sealed class WZSubProperty : WZProperty<WZNothing> {
+        internal WZSubProperty(string name, WZObject parent, WZBinaryReader r, WZImage container)
+            : base(name, parent, default(WZNothing), container, true, WZObjectType.SubProperty) {
             WZExtendedParser.ParsePropertyList(r, this, Image, Image._encrypted).ForEach(Add);
         }
     }
 
     /// <summary>
-    ///   A "Convex" property, containing multiple nameless WZ properties.
+    ///     A "Convex" property, containing multiple nameless WZ properties.
     /// </summary>
-    public sealed class WZConvexProperty : WZProperty<WZNothing>
-    {
+    public sealed class WZConvexProperty : WZProperty<WZNothing> {
         internal WZConvexProperty(string name, WZObject parent, WZBinaryReader r, WZImage container)
-            : base(name, parent, default(WZNothing), container, true, WZObjectType.Convex)
-        {
+            : base(name, parent, default(WZNothing), container, true, WZObjectType.Convex) {
             int count = r.ReadWZInt();
             for (int i = 0; i < count; ++i)
-                Add(WZExtendedParser.ParseExtendedProperty(i.ToString(CultureInfo.InvariantCulture), r, this, Image, Image._encrypted));
+                Add(WZExtendedParser.ParseExtendedProperty(i.ToString(CultureInfo.InvariantCulture), r, this, Image,
+                    Image._encrypted));
         }
     }
 }

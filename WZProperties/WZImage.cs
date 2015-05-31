@@ -26,29 +26,30 @@
 // choice, provided that you also meet, for each linked independent module,
 // the terms and conditions of the license of that module. An independent
 // module is a module which is not derived from or based on reWZ.
-using System;
 
-namespace reWZ.WZProperties
-{
+using System;
+using System.Collections.Generic;
+
+namespace reWZ.WZProperties {
     /// <summary>
-    ///   A WZ image in a WZ file.
+    ///     A WZ image in a WZ file.
     /// </summary>
-    public sealed class WZImage : WZObject
-    {
+    public sealed class WZImage : WZObject {
         internal bool _encrypted;
         private bool _parsed;
         internal WZBinaryReader _r;
         private Func<WZBinaryReader> _transform;
 
-        internal WZImage(string name, WZObject parent, WZFile file, WZBinaryReader reader, Func<WZBinaryReader> trans = null) : base(name, parent, file, true, WZObjectType.Image)
-        {
+        internal WZImage(string name, WZObject parent, WZFile file, WZBinaryReader reader,
+                         Func<WZBinaryReader> trans = null) : base(name, parent, file, true, WZObjectType.Image) {
             _r = reader;
             _transform = trans;
-            if ((file._flag & WZReadSelection.EagerParseImage) == WZReadSelection.EagerParseImage) Parse();
+            if ((file._flag & WZReadSelection.EagerParseImage) == WZReadSelection.EagerParseImage)
+                Parse();
         }
 
         /// <summary>
-        ///   Returns the child with the name <paramref name="childName" /> .
+        ///     Returns the child with the name <paramref name="childName" /> .
         /// </summary>
         /// <param name="childName"> The name of the child to return. </param>
         /// <returns> The retrieved child. </returns>
@@ -56,53 +57,63 @@ namespace reWZ.WZProperties
         {
             get
             {
-                if(!_parsed) Parse();
+                if (!_parsed)
+                    Parse();
                 return base[childName];
             }
         }
 
         /// <summary>
-        ///   Returns the number of children this property contains.
+        ///     Returns the number of children this property contains.
         /// </summary>
         public override int ChildCount
         {
             get
             {
-                if (!_parsed) Parse();
+                if (!_parsed)
+                    Parse();
                 return base.ChildCount;
             }
         }
 
-        public override System.Collections.Generic.IEnumerator<WZObject> GetEnumerator()
-        {
-            if (!_parsed) Parse();
+        public override IEnumerator<WZObject> GetEnumerator() {
+            if (!_parsed)
+                Parse();
             return base.GetEnumerator();
         }
+
         /// <summary>
-        ///   Checks if this property has a child with name <paramref name="name" /> .
+        ///     Checks if this property has a child with name <paramref name="name" /> .
         /// </summary>
         /// <param name="name"> The name of the child to locate. </param>
         /// <returns> true if this property has such a child, false otherwise or if this property cannot contain children. </returns>
-        public override bool HasChild(string name)
-        {
-            if (!_parsed) Parse();
+        public override bool HasChild(string name) {
+            if (!_parsed)
+                Parse();
             return base.HasChild(name);
         }
 
-        private void Parse()
-        {
+        private void Parse() {
             lock (File._lock) {
                 _r.Seek(0);
-                if (_r.ReadByte() != 0x73) WZFile.Die("WZImage with invalid header (not beginning with 0x73!)");
-                if ((int)File._variant == 2) _encrypted = false;
-                else if (_r.PeekFor(() => _r.ReadWZString()) == "Property") _encrypted = true;
-                else if (_r.PeekFor(() => _r.ReadWZString(false)) == "Property") _encrypted = false;
-                else WZFile.Die("WZImage with invalid header (no Property string! check your WZVariant)");
-                if (_r.ReadWZString(_encrypted) != "Property") WZFile.Die("Failed to determine image encryption!");
-                if (_r.ReadUInt16() != 0) WZFile.Die("WZImage with invalid header (no zero UInt16!)");
+                if (_r.ReadByte() != 0x73)
+                    WZFile.Die("WZImage with invalid header (not beginning with 0x73!)");
+                if ((int) File._variant == 2)
+                    _encrypted = false;
+                else if (_r.PeekFor(() => _r.ReadWZString()) == "Property")
+                    _encrypted = true;
+                else if (_r.PeekFor(() => _r.ReadWZString(false)) == "Property")
+                    _encrypted = false;
+                else
+                    WZFile.Die("WZImage with invalid header (no Property string! check your WZVariant)");
+                if (_r.ReadWZString(_encrypted) != "Property")
+                    WZFile.Die("Failed to determine image encryption!");
+                if (_r.ReadUInt16() != 0)
+                    WZFile.Die("WZImage with invalid header (no zero UInt16!)");
                 WZExtendedParser.ParsePropertyList(_r, this, this, _encrypted).ForEach(Add);
                 _parsed = true;
-                if (_transform == null) return;
+                if (_transform == null)
+                    return;
                 _r.Close();
                 _r = _transform();
                 _transform = null;

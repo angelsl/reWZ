@@ -106,8 +106,8 @@ namespace reWZ {
         }
 
         private void Parse() {
-            _r.Seek(0);
             lock (_lock) {
+                _r.Seek(0);
                 if (_r.ReadASCIIString(4) != "PKG1")
                     Die("WZ file has invalid header; file does not have magic \"PKG1\".");
                 _r.Skip(8);

@@ -89,10 +89,23 @@ namespace reWZ.WZProperties {
                 br.Skip(blockLen); // block Len & png data
             else {
                 br.Skip(1);
-                ushort header = br.PeekFor(() => br.ReadUInt16());
-                byte[] pngData = br.ReadBytes(blockLen - 1);
+                byte[] header = br.ReadBytes(2);
+                // FLG bit 5 indicates the presence of a preset dictionary
+                // seems like MS doesn't use that?
+                if ((header[1] & 0x20) != 0)
+                {
+                    Debug.WriteLine("Warning; zlib with preset dictionary");
+                    result = null;
+                    br.Skip(blockLen - 3);
+                    return true;
+                }
+                // zlib header: CMF (byte), FLG (byte)
+                byte[] pngData = br.ReadBytes(blockLen - 3);
                 result = ParsePNG(width, height, format1, format2,
-                    (header != 0x9C78 && header != 0xDA78) ? DecryptPNG(pngData) : pngData);
+                    // CMF least significant bits 0 to 3 are compression method. only 8 is valid
+                    ((header[0] & 0xF) != 8 ||
+                    // CMF << 8 | FLG i.e. header read as a big-endian short is a multiple of 31
+                    (header[0] << 8 | header[1]) % 31 != 0) ? DecryptPNG(pngData) : pngData);
                 return true;
             }
             result = null;
@@ -113,7 +126,7 @@ namespace reWZ.WZProperties {
 
         private unsafe Bitmap ParsePNG(int width, int height, int format1, int format2, byte[] data) {
             byte[] dec;
-            using (MemoryStream @in = new MemoryStream(data, 2, data.Length - 2))
+            using (MemoryStream @in = new MemoryStream(data, 0, data.Length))
                 dec = WZBinaryReader.Inflate(@in);
             int decLen = dec.Length;
             switch (format1) {

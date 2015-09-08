@@ -1,4 +1,4 @@
-// reWZ is copyright angelsl, 2011 to 2013 inclusive.
+// reWZ is copyright angelsl, 2011 to 2015 inclusive.
 // 
 // This file (WZProperty.cs) is part of reWZ.
 // 
@@ -53,8 +53,7 @@ namespace reWZ.WZProperties {
         /// <summary>
         ///     The value held by this WZ property.
         /// </summary>
-        public override T Value
-        {
+        public override T Value {
             get {
                 if (!_parsed)
                     CheckParsed();
@@ -81,30 +80,23 @@ namespace reWZ.WZProperties {
     /// </summary>
     /// <typeparam name="T"> The type that this property contains. </typeparam>
     public abstract class WZProperty<T> : WZObject {
-        private readonly WZImage _image;
         internal T _value;
 
         internal WZProperty(string name, WZObject parent, T value, WZImage container, bool children, WZObjectType type)
             : base(name, parent, container.File, children, type) {
             _value = value;
-            _image = container;
+            Image = container;
         }
 
         /// <summary>
         ///     The value held by this WZ property.
         /// </summary>
-        public virtual T Value
-        {
-            get { return _value; }
-        }
+        public virtual T Value => _value;
 
         /// <summary>
         ///     The image that this property resides in.
         /// </summary>
-        public WZImage Image
-        {
-            get { return _image; }
-        }
+        public WZImage Image { get; }
     }
 
     internal static class WZExtendedParser {
@@ -147,7 +139,7 @@ namespace reWZ.WZProperties {
                         default:
                             return
                                 WZUtil.Die<List<WZObject>>(
-                                    string.Format("Unknown property type {0} at ParsePropertyList", type));
+                                    $"Unknown property type {type} at ParsePropertyList");
                     }
                 }
                 return ret;
@@ -155,7 +147,7 @@ namespace reWZ.WZProperties {
         }
 
         internal static WZObject ParseExtendedProperty(string name, WZBinaryReader r, WZObject parent, WZImage f,
-                                                       bool encrypted) {
+            bool encrypted) {
             lock (f.File._lock) {
                 string type = r.ReadWZStringBlock(encrypted);
                 switch (type) {
@@ -174,7 +166,7 @@ namespace reWZ.WZProperties {
                         r.Skip(1);
                         return new WZUOLProperty(name, parent, r, f);
                     default:
-                        return WZUtil.Die<WZObject>(string.Format("Unknown ExtendedProperty type \"{0}\"", type));
+                        return WZUtil.Die<WZObject>($"Unknown ExtendedProperty type \"{type}\"");
                 }
             }
         }

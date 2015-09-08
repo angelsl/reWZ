@@ -1,4 +1,4 @@
-﻿// reWZ is copyright angelsl, 2011 to 2013 inclusive.
+// reWZ is copyright angelsl, 2011 to 2015 inclusive.
 // 
 // This file (WZAES.cs) is part of reWZ.
 // 
@@ -89,7 +89,7 @@ namespace reWZ {
                 case 2:
                     return new byte[0x10000];
                 default:
-                    throw new ArgumentException("Invalid WZ variant passed.", "version");
+                    throw new ArgumentException("Invalid WZ variant passed.", nameof(version));
             }
         }
 
@@ -107,10 +107,10 @@ namespace reWZ {
 
         internal string DecryptASCIIString(byte[] asciiBytes, bool encrypted = true) {
             int len = asciiBytes.Length;
-            if (len > _asciiEncKey.Length)
+            if (len > _asciiEncKey.Length) {
                 throw new NotSupportedException(
-                    string.Format("Cannot decrypt ASCII string longer than {0} characters. Please report this!",
-                        _asciiEncKey.Length));
+                    $"Cannot decrypt ASCII string longer than {_asciiEncKey.Length} characters. Please report this!");
+            }
             //char[] ret = new char[len];
             byte[] key = encrypted ? _asciiEncKey : _asciiKey;
             for (int i = 0; i < len; ++i)
@@ -120,10 +120,10 @@ namespace reWZ {
 
         internal string DecryptUnicodeString(byte[] ushortChars, bool encrypted = true) {
             int len = ushortChars.Length;
-            if (len > _unicodeEncKey.Length)
+            if (len > _unicodeEncKey.Length) {
                 throw new NotSupportedException(
-                    string.Format("Cannot decrypt UTF-16 string longer than {0} characters. Please report this!",
-                        _unicodeEncKey.Length));
+                    $"Cannot decrypt UTF-16 string longer than {_unicodeEncKey.Length} characters. Please report this!");
+            }
             //char[] ret = new char[len];
             byte[] key = encrypted ? _unicodeEncKey : _unicodeKey;
             for (int i = 0; i < len; ++i)

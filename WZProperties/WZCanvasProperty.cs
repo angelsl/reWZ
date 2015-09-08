@@ -1,4 +1,4 @@
-// reWZ is copyright angelsl, 2011 to 2013 inclusive.
+// reWZ is copyright angelsl, 2011 to 2015 inclusive.
 // 
 // This file (WZCanvasProperty.cs) is part of reWZ.
 // 
@@ -67,7 +67,7 @@ namespace reWZ.WZProperties {
 
         internal override bool Parse(WZBinaryReader br, bool initial, out Bitmap result) {
             bool skip = (File._flag & WZReadSelection.NeverParseCanvas) == WZReadSelection.NeverParseCanvas,
-                 eager = (File._flag & WZReadSelection.EagerParseCanvas) == WZReadSelection.EagerParseCanvas;
+                eager = (File._flag & WZReadSelection.EagerParseCanvas) == WZReadSelection.EagerParseCanvas;
             if (skip && eager) {
                 result = null;
                 return WZUtil.Die<bool>("Both NeverParseCanvas and EagerParseCanvas are set.");
@@ -106,7 +106,7 @@ namespace reWZ.WZProperties {
                     // CMF least significant bits 0 to 3 are compression method. only 8 is valid
                     ((header[0] & 0xF) != 8 ||
                      // CMF << 8 | FLG i.e. header read as a big-endian short is a multiple of 31
-                     (header[0] << 8 | header[1]) % 31 != 0)
+                     (header[0] << 8 | header[1])%31 != 0)
                         ? DecryptPNG(pngData)
                         : pngData);
                 return true;
@@ -169,9 +169,11 @@ namespace reWZ.WZProperties {
                 }
                 case 0x402: {
                     byte[] rgba = new byte[width*height*4];
-                    fixed(byte* decP = dec)
-                    fixed(byte* rgbaP = rgba)
-                        UnDXT.DecompressImage(rgbaP, width, height, decP, UnDXT.kDxt3);
+                    fixed (byte* decP = dec) {
+                        fixed (byte* rgbaP = rgba) {
+                            UnDXT.DecompressImage(rgbaP, width, height, decP, UnDXT.kDxt3);
+                        }
+                    }
                     _gcH = GCHandle.Alloc(rgba, GCHandleType.Pinned);
                     return new Bitmap(width, height, width << 2, PixelFormat.Format32bppArgb, _gcH.AddrOfPinnedObject());
                 }

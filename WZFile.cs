@@ -1,4 +1,4 @@
-﻿// reWZ is copyright angelsl, 2011 to 2013 inclusive.
+// reWZ is copyright angelsl, 2011 to 2015 inclusive.
 // 
 // This file (WZFile.cs) is part of reWZ.
 // 
@@ -127,7 +127,7 @@ namespace reWZ {
 
             for (ushort v = 0; v < ushort.MaxValue; v++) {
                 uint vHash = v.ToString(CultureInfo.InvariantCulture)
-                              .Aggregate<char, uint>(0, (current, t) => (32*current) + t + 1);
+                    .Aggregate<char, uint>(0, (current, t) => (32*current) + t + 1);
                 if ((0xFF ^ (vHash >> 24) ^ (vHash << 8 >> 24) ^ (vHash << 16 >> 24) ^ (vHash << 24 >> 24)) != ver)
                     continue;
                 _r.VersionHash = vHash;
@@ -153,9 +153,9 @@ namespace reWZ {
                     case 2:
                         int x = _r.ReadInt32();
                         type = _r.PeekFor(() => {
-                                              _r.Seek(x + _fstart);
-                                              return _r.ReadByte();
-                                          });
+                            _r.Seek(x + _fstart);
+                            return _r.ReadByte();
+                        });
                         break;
                     case 3:
                     case 4:
@@ -174,16 +174,17 @@ namespace reWZ {
                     break;
                 }
 
-                if (type == 3)
+                if (type == 3) {
                     try {
                         offset = _r.PeekFor(() => {
-                                                _r.Seek(_r.ReadWZOffset(_fstart));
-                                                long o;
-                                                success = DepthFirstImageSearch(out o);
-                                                return o;
-                                            });
+                            _r.Seek(_r.ReadWZOffset(_fstart));
+                            long o;
+                            success = DepthFirstImageSearch(out o);
+                            return o;
+                        });
                         break;
                     } catch {}
+                }
                 _r.Skip(4);
             }
             return success;
@@ -209,9 +210,9 @@ namespace reWZ {
                     case 2:
                         int x = _r.ReadInt32();
                         type = _r.PeekFor(() => {
-                                              _r.Seek(x + _fstart);
-                                              return _r.ReadByte();
-                                          });
+                            _r.Seek(x + _fstart);
+                            return _r.ReadByte();
+                        });
                         break;
                     case 3:
                     case 4:
@@ -239,7 +240,7 @@ namespace reWZ {
             bool success = false;
             for (ushort v = 0; v < ushort.MaxValue; v++) {
                 uint vHash = v.ToString(CultureInfo.InvariantCulture)
-                              .Aggregate<char, uint>(0, (current, t) => (32*current) + t + 1);
+                    .Aggregate<char, uint>(0, (current, t) => (32*current) + t + 1);
                 if ((0xFF ^ (vHash >> 24) ^ (vHash << 8 >> 24) ^ (vHash << 16 >> 24) ^ (vHash << 24 >> 24)) != ver)
                     continue;
                 _r.Seek(offset);
@@ -339,25 +340,22 @@ namespace reWZ {
         LowMemory = 32
     }
 
-    internal sealed class WZUtil
-    {
-        internal static T Die<T>(string cause)
-        {
+    internal sealed class WZUtil {
+        internal static T Die<T>(string cause) {
             throw new WZException(cause);
         }
 
-        internal static void Die(string cause)
-        {
+        internal static void Die(string cause) {
             throw new WZException(cause);
         }
 
         internal static WZObject ResolvePath(WZObject start, string path) {
             return
                 (path.StartsWith("/") ? path.Substring(1) : path).Split('/')
-                                                                 .Where(node => node != ".")
-                                                                 .Aggregate<string, WZObject>(start,
-                                                                     (current, node) =>
-                                                                         node == ".." ? current.Parent : current[node]);
+                    .Where(node => node != ".")
+                    .Aggregate(start,
+                        (current, node) =>
+                            node == ".." ? current.Parent : current[node]);
         }
     }
 }

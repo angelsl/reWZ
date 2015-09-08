@@ -1,4 +1,4 @@
-﻿// reWZ is copyright angelsl, 2011 to 2013 inclusive.
+// reWZ is copyright angelsl, 2011 to 2015 inclusive.
 // 
 // This file (WZBinaryReader.cs) is part of reWZ.
 // 
@@ -118,9 +118,7 @@ namespace reWZ {
                 return _aes.DecryptUnicodeString(rbytes, encrypted);
             } // !(length >= 0), i think we can assume length < 0, but the compiler can't seem to see that
             length = length == -128 ? ReadInt32() : -length;
-            if (length == 0)
-                return "";
-            return _aes.DecryptASCIIString(ReadBytes(length), encrypted);
+            return length == 0 ? "" : _aes.DecryptASCIIString(ReadBytes(length), encrypted);
         }
 
         /// <summary>
@@ -132,9 +130,9 @@ namespace reWZ {
         /// <returns> The read string. </returns>
         private string ReadWZStringAtOffset(long offset, bool encrypted = true) {
             return PeekFor(() => {
-                               BaseStream.Position = offset;
-                               return ReadWZString(encrypted);
-                           });
+                BaseStream.Position = offset;
+                return ReadWZString(encrypted);
+            });
         }
 
         /// <summary>
@@ -142,9 +140,7 @@ namespace reWZ {
         /// </summary>
         /// <param name="length"> The length of the string. </param>
         /// <returns> The read string. </returns>
-        internal string ReadASCIIString(int length) {
-            return Encoding.ASCII.GetString(ReadBytes(length));
-        }
+        internal string ReadASCIIString(int length) => Encoding.ASCII.GetString(ReadBytes(length));
 
         /// <summary>
         ///     Reads a raw and unencrypted null-terminated ASCII string.
@@ -244,45 +240,31 @@ namespace reWZ {
     internal sealed class Substream : Stream {
         private readonly Stream _backing;
         private readonly long _end; // end is exclusive
-        private readonly long _length; // end is exclusive
         private readonly long _origin; // end is exclusive
         private long _posInBacking;
 
         internal Substream(Stream backing, long start, long length) {
             if (!backing.CanSeek)
-                throw new ArgumentException("A Substream's backing stream must be seekable!", "backing");
+                throw new ArgumentException("A Substream's backing stream must be seekable!", nameof(backing));
             if (start >= backing.Length)
-                throw new ArgumentOutOfRangeException("start", "The Substream falls outside the backing stream!");
+                throw new ArgumentOutOfRangeException(nameof(start), "The Substream falls outside the backing stream!");
             _backing = backing;
             _origin = start;
-            _length = length;
+            Length = length;
             _end = start + length;
             if (_end > backing.Length)
-                throw new ArgumentOutOfRangeException("length", "The Substream falls outside the backing stream!");
+                throw new ArgumentOutOfRangeException(nameof(length), "The Substream falls outside the backing stream!");
         }
 
-        public override bool CanRead
-        {
-            get { return true; }
-        }
+        public override bool CanRead => true;
 
-        public override bool CanSeek
-        {
-            get { return true; }
-        }
+        public override bool CanSeek => true;
 
-        public override bool CanWrite
-        {
-            get { return false; }
-        }
+        public override bool CanWrite => false;
 
-        public override long Length
-        {
-            get { return _length; }
-        }
+        public override long Length { get; }
 
-        public override long Position
-        {
+        public override long Position {
             get { return _posInBacking - _origin; }
             set { _posInBacking = value + _origin; }
         }
@@ -302,11 +284,11 @@ namespace reWZ {
                     tPos = _end + offset;
                     break;
                 default:
-                    throw new ArgumentException("Invalid SeekOrigin specified.", "origin");
+                    throw new ArgumentException("Invalid SeekOrigin specified.", nameof(origin));
             }
 
             if (tPos >= _end || tPos < _origin)
-                throw new ArgumentOutOfRangeException("offset", "You cannot seek out of the substream!");
+                throw new ArgumentOutOfRangeException(nameof(offset), "You cannot seek out of the substream!");
             return (_posInBacking = tPos);
         }
 

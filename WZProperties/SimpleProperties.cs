@@ -1,4 +1,4 @@
-﻿// reWZ is copyright angelsl, 2011 to 2013 inclusive.
+// reWZ is copyright angelsl, 2011 to 2015 inclusive.
 // 
 // This file (SimpleProperties.cs) is part of reWZ.
 // 
@@ -29,7 +29,6 @@
 
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
 
 namespace reWZ.WZProperties {
     /// <summary>
@@ -126,8 +125,13 @@ namespace reWZ.WZProperties {
         private WZObject _finalTarget;
         private bool _resolved;
 
+        internal WZUOLProperty(string name, WZObject parent, WZBinaryReader reader, WZImage container)
+            : base(
+                name, parent, string.Intern(reader.ReadWZStringBlock(container._encrypted)), container, false,
+                WZObjectType.UOL) {}
+
         /// <summary>
-        /// Returns the <see cref="WZObject" /> that is directly pointed to by this UOL.
+        ///     Returns the <see cref="WZObject" /> that is directly pointed to by this UOL.
         /// </summary>
         public WZObject Target => WZUtil.ResolvePath(Parent, Value);
 
@@ -141,11 +145,6 @@ namespace reWZ.WZProperties {
                 return _finalTarget;
             }
         }
-
-        internal WZUOLProperty(string name, WZObject parent, WZBinaryReader reader, WZImage container)
-            : base(
-                name, parent, string.Intern(reader.ReadWZStringBlock(container._encrypted)), container, false,
-                WZObjectType.UOL) {}
 
         private WZObject ResolveFully() {
             HashSet<WZObject> traversed = new HashSet<WZObject> {this};

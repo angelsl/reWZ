@@ -1,4 +1,4 @@
-﻿// reWZ is copyright angelsl, 2011 to 2015 inclusive.
+// reWZ is copyright angelsl, 2011 to 2015 inclusive.
 // 
 // This file (UnDXT.cs) is part of reWZ.
 // 
@@ -81,7 +81,7 @@ namespace reWZ {
             int bytesPerBlock = ((flags & kDxt1) != 0) ? 8 : 16;
 
             // loop over blocks
-            for (int y = 0; y < height; y += 4)
+            for (int y = 0; y < height; y += 4) {
                 for (int x = 0; x < width; x += 4) {
                     // decompress the block
                     byte[] targetRgba = new byte[4*16];
@@ -90,7 +90,7 @@ namespace reWZ {
                     fixed (byte* sourcePixelA = targetRgba) {
                         Decompress(sourcePixelA, sourceBlock, flags);
                         byte* sourcePixel = sourcePixelA;
-                        for (int py = 0; py < 4; ++py)
+                        for (int py = 0; py < 4; ++py) {
                             for (int px = 0; px < 4; ++px) {
                                 // get the target location
                                 int sx = x + px;
@@ -104,10 +104,12 @@ namespace reWZ {
                                 } else // skip this pixel as its outside the image
                                     sourcePixel += 4;
                             }
+                        }
                     }
                     // advance
                     sourceBlock += bytesPerBlock;
                 }
+            }
         }
 
         private static unsafe void Decompress(byte* rgba, void* block, int flags) {
@@ -157,46 +159,47 @@ namespace reWZ {
             byte[] codesA = new byte[16];
             byte[] indicesA = new byte[16];
 
-            fixed (byte* codes = codesA)
-            fixed (byte* indices = indicesA) {
-                int a = Unpack565(bytes, codes);
-                int b = Unpack565(bytes + 2, codes + 4);
+            fixed (byte* codes = codesA) {
+                fixed (byte* indices = indicesA) {
+                    int a = Unpack565(bytes, codes);
+                    int b = Unpack565(bytes + 2, codes + 4);
 
-                // generate the midpoints
-                for (int i = 0; i < 3; ++i) {
-                    int c = codes[i];
-                    int d = codes[4 + i];
+                    // generate the midpoints
+                    for (int i = 0; i < 3; ++i) {
+                        int c = codes[i];
+                        int d = codes[4 + i];
 
-                    if (isDxt1 && a <= b) {
-                        codes[8 + i] = (byte) ((c + d)/2);
-                        codes[12 + i] = 0;
-                    } else {
-                        codes[8 + i] = (byte) ((2*c + d)/3);
-                        codes[12 + i] = (byte) ((c + 2*d)/3);
+                        if (isDxt1 && a <= b) {
+                            codes[8 + i] = (byte) ((c + d)/2);
+                            codes[12 + i] = 0;
+                        } else {
+                            codes[8 + i] = (byte) ((2*c + d)/3);
+                            codes[12 + i] = (byte) ((c + 2*d)/3);
+                        }
                     }
-                }
 
-                // fill in alpha for the intermediate values
-                codes[8 + 3] = 255;
-                codes[12 + 3] = (byte) ((isDxt1 && a <= b) ? 0 : 255);
+                    // fill in alpha for the intermediate values
+                    codes[8 + 3] = 255;
+                    codes[12 + 3] = (byte) ((isDxt1 && a <= b) ? 0 : 255);
 
-                // unpack the indices
-                for (int i = 0; i < 4; ++i) {
-                    byte* ind = indices + 4*i;
-                    byte packed = bytes[4 + i];
+                    // unpack the indices
+                    for (int i = 0; i < 4; ++i) {
+                        byte* ind = indices + 4*i;
+                        byte packed = bytes[4 + i];
 
-                    ind[0] = (byte) (packed & 0x3);
-                    ind[1] = (byte) ((packed >> 2) & 0x3);
-                    ind[2] = (byte) ((packed >> 4) & 0x3);
-                    ind[3] = (byte) ((packed >> 6) & 0x3);
-                }
+                        ind[0] = (byte) (packed & 0x3);
+                        ind[1] = (byte) ((packed >> 2) & 0x3);
+                        ind[2] = (byte) ((packed >> 4) & 0x3);
+                        ind[3] = (byte) ((packed >> 6) & 0x3);
+                    }
 
-                // store out the colours
-                for (int i = 0; i < 16; ++i) {
-                    byte offset = (byte) (4*indices[i]);
-                    for (int j = 0; j < 3; ++j)
-                        rgba[4*i + 2 - j] = codes[offset + j];
-                    rgba[4*i + 3] = codes[offset + 3];
+                    // store out the colours
+                    for (int i = 0; i < 16; ++i) {
+                        byte offset = (byte) (4*indices[i]);
+                        for (int j = 0; j < 3; ++j)
+                            rgba[4*i + 2 - j] = codes[offset + j];
+                        rgba[4*i + 3] = codes[offset + 3];
+                    }
                 }
             }
         }
@@ -235,10 +238,11 @@ namespace reWZ {
                     codes[1 + i] = (byte) (((5 - i)*alpha0 + i*alpha1)/5);
                 codes[6] = 0;
                 codes[7] = 255;
-            } else
-            // use 7-alpha codebook
+            } else {
+                // use 7-alpha codebook
                 for (int i = 1; i < 7; ++i)
                     codes[1 + i] = (byte) (((7 - i)*alpha0 + i*alpha1)/7);
+            }
 
             // decode the indices
             byte[] indices = new byte[16];

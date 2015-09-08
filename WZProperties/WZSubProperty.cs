@@ -1,4 +1,4 @@
-﻿// reWZ is copyright angelsl, 2011 to 2013 inclusive.
+// reWZ is copyright angelsl, 2011 to 2015 inclusive.
 // 
 // This file (WZSubProperty.cs) is part of reWZ.
 // 
@@ -47,9 +47,10 @@ namespace reWZ.WZProperties {
         internal WZConvexProperty(string name, WZObject parent, WZBinaryReader r, WZImage container)
             : base(name, parent, default(WZNothing), container, true, WZObjectType.Convex) {
             int count = r.ReadWZInt();
-            for (int i = 0; i < count; ++i)
+            for (int i = 0; i < count; ++i) {
                 Add(WZExtendedParser.ParseExtendedProperty(i.ToString(CultureInfo.InvariantCulture), r, this, Image,
                     Image._encrypted));
+            }
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿// reWZ is copyright angelsl, 2011 to 2013 inclusive.
+// reWZ is copyright angelsl, 2011 to 2015 inclusive.
 // 
 // This file (WZImage.cs) is part of reWZ.
 // 
@@ -41,7 +41,7 @@ namespace reWZ.WZProperties {
         private Func<WZBinaryReader> _transform;
 
         internal WZImage(string name, WZObject parent, WZFile file, WZBinaryReader reader,
-                         Func<WZBinaryReader> trans = null) : base(name, parent, file, true, WZObjectType.Image) {
+            Func<WZBinaryReader> trans = null) : base(name, parent, file, true, WZObjectType.Image) {
             _r = reader;
             _transform = trans;
             if ((file._flag & WZReadSelection.EagerParseImage) == WZReadSelection.EagerParseImage)
@@ -53,10 +53,8 @@ namespace reWZ.WZProperties {
         /// </summary>
         /// <param name="childName"> The name of the child to return. </param>
         /// <returns> The retrieved child. </returns>
-        public override WZObject this[string childName]
-        {
-            get
-            {
+        public override WZObject this[string childName] {
+            get {
                 if (!_parsed)
                     Parse();
                 return base[childName];
@@ -66,10 +64,8 @@ namespace reWZ.WZProperties {
         /// <summary>
         ///     Returns the number of children this property contains.
         /// </summary>
-        public override int ChildCount
-        {
-            get
-            {
+        public override int ChildCount {
+            get {
                 if (!_parsed)
                     Parse();
                 return base.ChildCount;

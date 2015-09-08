@@ -1,4 +1,4 @@
-// reWZ is copyright angelsl, 2011 to 2013 inclusive.
+// reWZ is copyright angelsl, 2011 to 2015 inclusive.
 // 
 // This file (WZObject.cs) is part of reWZ.
 // 
@@ -41,70 +41,49 @@ namespace reWZ.WZProperties {
     public abstract class WZObject : IEnumerable<WZObject> {
         private readonly ChildCollection _backing;
         private readonly bool _canContainChildren;
-        private readonly WZFile _file;
-        private readonly string _name;
-        private readonly WZObject _parent;
-        private readonly WZObjectType _type;
 
         internal WZObject(string name, WZObject parent, WZFile container, bool children, WZObjectType type) {
-            _name = string.Intern(name);
-            _parent = parent;
-            _file = container;
+            Name = string.Intern(name);
+            Parent = parent;
+            File = container;
             _canContainChildren = children;
             if (_canContainChildren)
                 _backing = new ChildCollection();
-            _type = type;
+            Type = type;
         }
 
         /// <summary>
         ///     The name of the WZ object.
         /// </summary>
-        public string Name
-        {
-            get { return _name; }
-        }
+        public string Name { get; }
 
         /// <summary>
         ///     The parent of this WZ object, or <code>null</code> if this is the main WZ directory.
         /// </summary>
-        public WZObject Parent
-        {
-            get { return _parent; }
-        }
+        public WZObject Parent { get; }
 
         /// <summary>
         ///     The absolute path to this object.
         /// </summary>
-        public string Path
-        {
-            get { return ConstructPath(); }
-        }
+        public string Path => ConstructPath();
 
         /// <summary>
         ///     The WZ file containing this object.
         /// </summary>
-        public WZFile File
-        {
-            get { return _file; }
-        }
+        public WZFile File { get; }
 
         /// <summary>
         ///     The type of this object.
         /// </summary>
-        public WZObjectType Type
-        {
-            get { return _type; }
-        }
+        public WZObjectType Type { get; }
 
         /// <summary>
         ///     Returns the child with the name <paramref name="childName" /> .
         /// </summary>
         /// <param name="childName"> The name of the child to return. </param>
         /// <returns> The retrieved child. </returns>
-        public virtual WZObject this[string childName]
-        {
-            get
-            {
+        public virtual WZObject this[string childName] {
+            get {
                 if (!_canContainChildren)
                     throw new NotSupportedException("This WZObject cannot contain children.");
                 return _backing[childName];
@@ -114,10 +93,7 @@ namespace reWZ.WZProperties {
         /// <summary>
         ///     Returns the number of children this property contains.
         /// </summary>
-        public virtual int ChildCount
-        {
-            get { return _canContainChildren ? _backing.Count : 0; }
-        }
+        public virtual int ChildCount => _canContainChildren ? _backing.Count : 0;
 
         /// <summary>
         ///     Checks if this property has a child with name <paramref name="name" /> .
@@ -164,10 +140,10 @@ namespace reWZ.WZProperties {
         public WZObject ResolvePath(string path) {
             return
                 (path.StartsWith("/") ? path.Substring(1) : path).Split('/')
-                                                                 .Where(node => node != ".")
-                                                                 .Aggregate(this,
-                                                                     (current, node) =>
-                                                                         node == ".." ? current.Parent : current[node]);
+                    .Where(node => node != ".")
+                    .Aggregate(this,
+                        (current, node) =>
+                            node == ".." ? current.Parent : current[node]);
         }
 
         internal void Add(WZObject o) {
@@ -175,7 +151,7 @@ namespace reWZ.WZProperties {
         }
 
         private string ConstructPath() {
-            StringBuilder s = new StringBuilder(_name);
+            StringBuilder s = new StringBuilder(Name);
             WZObject p = this;
             while ((p = p.Parent) != null)
                 s.Insert(0, "/").Insert(0, p.Name);

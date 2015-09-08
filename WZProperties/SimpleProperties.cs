@@ -27,7 +27,7 @@
 // the terms and conditions of the license of that module. An independent
 // module is a module which is not derived from or based on reWZ.
 
-using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 
@@ -80,7 +80,7 @@ namespace reWZ.WZProperties {
             byte t = reader.ReadByte();
             return t == 0x80
                 ? reader.ReadSingle()
-                : (t == 0 ? 0f : WZFile.Die<float>("Unknown byte while reading WZSingleProperty."));
+                : (t == 0 ? 0f : WZUtil.Die<float>("Unknown byte while reading WZSingleProperty."));
         }
     }
 
@@ -103,10 +103,11 @@ namespace reWZ.WZProperties {
             if (!initial || (File._flag & WZReadSelection.EagerParseStrings) == WZReadSelection.EagerParseStrings) {
                 result = string.Intern(r.ReadWZStringBlock(Image._encrypted));
                 return true;
+            } else {
+                r.SkipWZStringBlock();
+                result = null;
+                return false;
             }
-            r.SkipWZStringBlock();
-            result = null;
-            return false;
         }
     }
 
@@ -122,61 +123,40 @@ namespace reWZ.WZProperties {
     ///     A link property, used to link to other properties in the WZ file.
     /// </summary>
     public sealed class WZUOLProperty : WZProperty<string> {
+        private WZObject _finalTarget;
+        private bool _resolved;
+
+        /// <summary>
+        /// Returns the <see cref="WZObject" /> that is directly pointed to by this UOL.
+        /// </summary>
+        public WZObject Target => WZUtil.ResolvePath(Parent, Value);
+
+        public WZObject FinalTarget {
+            get {
+                // No need lock here, it's okay to repeat work
+                if (_resolved)
+                    return _finalTarget;
+                _finalTarget = ResolveFully();
+                _resolved = true;
+                return _finalTarget;
+            }
+        }
+
         internal WZUOLProperty(string name, WZObject parent, WZBinaryReader reader, WZImage container)
             : base(
                 name, parent, string.Intern(reader.ReadWZStringBlock(container._encrypted)), container, false,
                 WZObjectType.UOL) {}
 
-        /// <summary>
-        ///     Resolves the link once.
-        /// </summary>
-        /// <returns> The WZ object that this link refers to. </returns>
-        public WZObject Resolve() {
-            return Value.Split('/')
-                        .Where(node => node != ".")
-                        .Aggregate(Parent, (current, node) => node == ".." ? current.Parent : current[node]);
-        }
-
-        /// <summary>
-        ///     Resolves the link recursively, repeatedly resolving links until an object is reached.
-        /// </summary>
-        /// <returns> The non-link WZ object that this link refers to. </returns>
-        public WZObject ResolveFully() {
+        private WZObject ResolveFully() {
+            HashSet<WZObject> traversed = new HashSet<WZObject> {this};
             WZObject ret = this;
-            while (ret is WZUOLProperty)
-                ret = ((WZUOLProperty) ret).Resolve();
-            return ret;
-        }
-    }
-
-    /// <summary>
-    ///     A sound property.
-    /// </summary>
-    public sealed class WZAudioProperty : WZDelayedProperty<byte[]>, IDisposable {
-        internal WZAudioProperty(string name, WZObject parent, WZImage container)
-            : base(name, parent, container, false, WZObjectType.Audio) {}
-
-        /// <summary>
-        ///     Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-        /// </summary>
-        /// <filterpriority>2</filterpriority>
-        public void Dispose() {
-            _parsed = false;
-            _value = null;
-        }
-
-        internal override bool Parse(WZBinaryReader r, bool initial, out byte[] result) {
-            r.Skip(1);
-            int blockLen = r.ReadWZInt(); // sound data length
-            r.ReadWZInt(); // sound duration
-            //r.Skip(82); // header [82 bytes]
-            if (!initial || (File._flag & WZReadSelection.EagerParseAudio) == WZReadSelection.EagerParseAudio) {
-                result = r.ReadBytes(blockLen + 82);
-                return true; // sound data 
+            while (ret is WZUOLProperty) {
+                ret = ((WZUOLProperty) ret).Target;
+                if (traversed.Contains(ret))
+                    return null;
+                traversed.Add(ret);
             }
-            r.Skip(blockLen + 82);
-            result = null;
-            return false;
+            return ret;
         }
     }
 }

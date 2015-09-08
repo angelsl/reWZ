@@ -41,7 +41,7 @@ namespace reWZ.WZProperties {
         /// <summary>
         ///     Whether the delayed property has been parsed.
         /// </summary>
-        protected bool _parsed;
+        internal bool _parsed;
 
         internal WZDelayedProperty(string name, WZObject parent, WZImage container, bool children, WZObjectType type)
             : base(name, parent, default(T), container, children, type) {
@@ -55,15 +55,21 @@ namespace reWZ.WZProperties {
         /// </summary>
         public override T Value
         {
-            get
-            {
+            get {
                 if (!_parsed)
-                    lock (File._lock)
-                        _parsed = Image._r.PeekFor(() => {
-                                                       Image._r.Seek(_offset);
-                                                       return Parse(Image._r, false, out _value);
-                                                   });
+                    CheckParsed();
                 return _value;
+            }
+        }
+
+        internal void CheckParsed() {
+            lock (File._lock) {
+                if (!_parsed) {
+                    _parsed = Image._r.PeekFor(() => {
+                        Image._r.Seek(_offset);
+                        return Parse(Image._r, false, out _value);
+                    });
+                }
             }
         }
 
@@ -140,7 +146,7 @@ namespace reWZ.WZProperties {
                             break;
                         default:
                             return
-                                WZFile.Die<List<WZObject>>(
+                                WZUtil.Die<List<WZObject>>(
                                     string.Format("Unknown property type {0} at ParsePropertyList", type));
                     }
                 }
@@ -168,7 +174,7 @@ namespace reWZ.WZProperties {
                         r.Skip(1);
                         return new WZUOLProperty(name, parent, r, f);
                     default:
-                        return WZFile.Die<WZObject>(string.Format("Unknown ExtendedProperty type \"{0}\"", type));
+                        return WZUtil.Die<WZObject>(string.Format("Unknown ExtendedProperty type \"{0}\"", type));
                 }
             }
         }

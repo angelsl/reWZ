@@ -167,7 +167,7 @@ namespace reWZ {
                 case 0x1B:
                     return ReadWZStringAtOffset(ReadInt32(), encrypted);
                 default:
-                    return WZFile.Die<string>("Unknown string type in string block!");
+                    return WZUtil.Die<string>("Unknown string type in string block!");
             }
         }
 
@@ -182,7 +182,7 @@ namespace reWZ {
                     Skip(4);
                     return;
                 default:
-                    WZFile.Die("Unknown string type in string block!");
+                    WZUtil.Die("Unknown string type in string block!");
                     return;
             }
         }
@@ -215,6 +215,14 @@ namespace reWZ {
                 uint ret = ((((uint) BaseStream.Position - fstart) ^ 0xFFFFFFFF)*VersionHash) - WZAES.OffsetKey;
                 return (((ret << (int) ret) | (ret >> (int) (32 - ret))) ^ ReadUInt32()) + (fstart*2);
             }
+        }
+
+        internal Guid[] ReadGuidArray() {
+            int length = ReadByte();
+            Guid[] ret = new Guid[length];
+            for (int i = 0; i < length; ++i)
+                ret[i] = new Guid(ReadBytes(16));
+            return ret;
         }
 
         internal static byte[] Inflate(Stream @in) {

@@ -1,4 +1,4 @@
-﻿// reWZ is copyright angelsl, 2011 to 2013 inclusive.
+// reWZ is copyright angelsl, 2011 to 2013 inclusive.
 // 
 // This file (WZCanvasProperty.cs) is part of reWZ.
 // 
@@ -70,7 +70,7 @@ namespace reWZ.WZProperties {
                  eager = (File._flag & WZReadSelection.EagerParseCanvas) == WZReadSelection.EagerParseCanvas;
             if (skip && eager) {
                 result = null;
-                return WZFile.Die<bool>("Both NeverParseCanvas and EagerParseCanvas are set.");
+                return WZUtil.Die<bool>("Both NeverParseCanvas and EagerParseCanvas are set.");
             }
             br.Skip(1);
             if (br.ReadByte() == 1) {
@@ -82,18 +82,19 @@ namespace reWZ.WZProperties {
             int width = br.ReadWZInt(); // width
             int height = br.ReadWZInt(); // height
             int format1 = br.ReadWZInt(); // format 1
-            int format2 = br.ReadByte(); // format 2
+            int scale = br.ReadByte(); // format 2
             br.Skip(4);
             int blockLen = br.ReadInt32();
-            if ((initial || skip) && !eager)
+            if ((initial || skip) && !eager) {
                 br.Skip(blockLen); // block Len & png data
-            else {
+                result = null;
+                return skip;
+            } else {
                 br.Skip(1);
                 byte[] header = br.ReadBytes(2);
                 // FLG bit 5 indicates the presence of a preset dictionary
                 // seems like MS doesn't use that?
-                if ((header[1] & 0x20) != 0)
-                {
+                if ((header[1] & 0x20) != 0) {
                     Debug.WriteLine("Warning; zlib with preset dictionary");
                     result = null;
                     br.Skip(blockLen - 3);
@@ -101,15 +102,15 @@ namespace reWZ.WZProperties {
                 }
                 // zlib header: CMF (byte), FLG (byte)
                 byte[] pngData = br.ReadBytes(blockLen - 3);
-                result = ParsePNG(width, height, format1, format2,
+                result = ParsePNG(width, height, format1, scale,
                     // CMF least significant bits 0 to 3 are compression method. only 8 is valid
                     ((header[0] & 0xF) != 8 ||
-                    // CMF << 8 | FLG i.e. header read as a big-endian short is a multiple of 31
-                    (header[0] << 8 | header[1]) % 31 != 0) ? DecryptPNG(pngData) : pngData);
+                     // CMF << 8 | FLG i.e. header read as a big-endian short is a multiple of 31
+                     (header[0] << 8 | header[1]) % 31 != 0)
+                        ? DecryptPNG(pngData)
+                        : pngData);
                 return true;
             }
-            result = null;
-            return skip;
         }
 
         private byte[] DecryptPNG(byte[] @in) {
@@ -124,15 +125,15 @@ namespace reWZ.WZProperties {
             }
         }
 
-        private unsafe Bitmap ParsePNG(int width, int height, int format1, int format2, byte[] data) {
+        private unsafe Bitmap ParsePNG(int width, int height, int format1, int scale, byte[] data) {
             byte[] dec;
             using (MemoryStream @in = new MemoryStream(data, 0, data.Length))
                 dec = WZBinaryReader.Inflate(@in);
             int decLen = dec.Length;
+            width >>= scale;
+            height >>= scale;
             switch (format1) {
-                case 0x001:
-                    if (format2 != 0)
-                        goto default; // TODO: Handle format2 = 1, 2
+                case 0x001: {
                     byte[] argb = new byte[width*height*4];
                     fixed (byte* r = argb, t = dec) {
                         byte* s = r, u = t;
@@ -144,9 +145,8 @@ namespace reWZ.WZProperties {
                     decLen *= 2;
                     dec = argb;
                     goto case 0x002;
-                case 0x002:
-                    if (format2 != 0)
-                        goto default;
+                }
+                case 0x002: {
                     if (decLen != width*height*4) {
                         Debug.WriteLine("Warning; dec.Length != 4wh; 32BPP");
                         byte[] proper = new byte[width*height*4];
@@ -155,35 +155,28 @@ namespace reWZ.WZProperties {
                     }
                     _gcH = GCHandle.Alloc(dec, GCHandleType.Pinned);
                     return new Bitmap(width, height, width << 2, PixelFormat.Format32bppArgb, _gcH.AddrOfPinnedObject());
-                case 0x201:
-                    switch (format2) {
-                        case 0:
-                            if (decLen != width*height*2) {
-                                Debug.WriteLine("Warning; dec.Length != 2wh; 16BPP");
-                                byte[] proper = new byte[width*height*2];
-                                Buffer.BlockCopy(dec, 0, proper, 0, Math.Min(proper.Length, decLen));
-                                dec = proper;
-                            }
-                            _gcH = GCHandle.Alloc(dec, GCHandleType.Pinned);
-                            return new Bitmap(width, height, width << 1, PixelFormat.Format16bppRgb565,
-                                _gcH.AddrOfPinnedObject());
-                        case 4:
-                            width >>= 4;
-                            height >>= 4;
-                            goto case 0;
+                }
+                case 0x201: {
+                    if (decLen != width*height*2) {
+                        Debug.WriteLine("Warning; dec.Length != 2wh; 16BPP");
+                        byte[] proper = new byte[width*height*2];
+                        Buffer.BlockCopy(dec, 0, proper, 0, Math.Min(proper.Length, decLen));
+                        dec = proper;
                     }
-                    goto default;
-                case 0x402:
-                    if (format2 != 0)
-                        goto default;
+                    _gcH = GCHandle.Alloc(dec, GCHandleType.Pinned);
+                    return new Bitmap(width, height, width << 1, PixelFormat.Format16bppRgb565,
+                        _gcH.AddrOfPinnedObject());
+                }
+                case 0x402: {
                     byte[] rgba = new byte[width*height*4];
                     fixed(byte* decP = dec)
                     fixed(byte* rgbaP = rgba)
                         UnDXT.DecompressImage(rgbaP, width, height, decP, UnDXT.kDxt3);
                     _gcH = GCHandle.Alloc(rgba, GCHandleType.Pinned);
                     return new Bitmap(width, height, width << 2, PixelFormat.Format32bppArgb, _gcH.AddrOfPinnedObject());
+                }
                 default:
-                    Debug.WriteLine("Unknown bitmap type format1:{0} format2:{1}", format1, format2);
+                    Debug.WriteLine("Unknown bitmap type format1:{0} scale:{1}", format1, scale);
                     return null;
             }
         }

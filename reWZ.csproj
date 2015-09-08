@@ -41,6 +41,7 @@
     <Compile Include="WZBinaryReader.cs" />
     <Compile Include="WZException.cs" />
     <Compile Include="WZFile.cs" />
+    <Compile Include="WZProperties\WZAudioProperty.cs" />
     <Compile Include="WZProperties\WZImage.cs" />
     <Compile Include="WZProperties\SimpleProperties.cs" />
     <Compile Include="WZProperties\WZCanvasProperty.cs" />

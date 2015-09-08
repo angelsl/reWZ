@@ -97,19 +97,14 @@ namespace reWZ {
         /// <param name="path"> The path to resolve. </param>
         /// <exception cref="System.Collections.Generic.KeyNotFoundException">The path has an invalid node.</exception>
         public WZObject ResolvePath(string path) {
-            return
-                (path.StartsWith("/") ? path.Substring(1) : path).Split('/')
-                                                                 .Where(node => node != ".")
-                                                                 .Aggregate<string, WZObject>(MainDirectory,
-                                                                     (current, node) =>
-                                                                         node == ".." ? current.Parent : current[node]);
+            return WZUtil.ResolvePath(MainDirectory, path);
         }
 
         private void Parse() {
             lock (_lock) {
                 _r.Seek(0);
                 if (_r.ReadASCIIString(4) != "PKG1")
-                    Die("WZ file has invalid header; file does not have magic \"PKG1\".");
+                    WZUtil.Die("WZ file has invalid header; file does not have magic \"PKG1\".");
                 _r.Skip(8);
                 _fstart = _r.ReadUInt32();
                 _r.ReadASCIIZString();
@@ -141,7 +136,7 @@ namespace reWZ {
             }
 
             if (!GuessVersionWithImageOffsetAt(ver, offset))
-                Die("Unable to guess WZ version.");
+                WZUtil.Die("Unable to guess WZ version.");
             _r.Seek(_fstart);
         }
 
@@ -167,7 +162,7 @@ namespace reWZ {
                         _r.SkipWZString();
                         break;
                     default:
-                        Die("Unknown object type in WzDirectory.");
+                        WZUtil.Die("Unknown object type in WzDirectory.");
                         break;
                 }
 
@@ -197,7 +192,7 @@ namespace reWZ {
         private long TryFindImageInDir(out bool success) {
             int count = _r.ReadWZInt();
             if (count == 0)
-                Die("WZ file has no entries!");
+                WZUtil.Die("WZ file has no entries!");
             long offset = 0;
             offset = TryFindImageOffset(count, offset, out success);
             return offset;
@@ -223,7 +218,7 @@ namespace reWZ {
                         _r.SkipWZString();
                         break;
                     default:
-                        Die("Unknown object type in WzDirectory.");
+                        WZUtil.Die("Unknown object type in WzDirectory.");
                         break;
                 }
 
@@ -275,14 +270,6 @@ namespace reWZ {
 
         internal Stream GetSubstream(long offset, long length) {
             return new Substream(_file, offset, length);
-        }
-
-        internal static T Die<T>(string cause) {
-            throw new WZException(cause);
-        }
-
-        internal static void Die(string cause) {
-            throw new WZException(cause);
         }
 
         #region IDisposable Members
@@ -350,5 +337,27 @@ namespace reWZ {
         ///     Set this flag to disable reading entire WZ images into memory when any of the eager load flags are set.
         /// </summary>
         LowMemory = 32
+    }
+
+    internal sealed class WZUtil
+    {
+        internal static T Die<T>(string cause)
+        {
+            throw new WZException(cause);
+        }
+
+        internal static void Die(string cause)
+        {
+            throw new WZException(cause);
+        }
+
+        internal static WZObject ResolvePath(WZObject start, string path) {
+            return
+                (path.StartsWith("/") ? path.Substring(1) : path).Split('/')
+                                                                 .Where(node => node != ".")
+                                                                 .Aggregate<string, WZObject>(start,
+                                                                     (current, node) =>
+                                                                         node == ".." ? current.Parent : current[node]);
+        }
     }
 }

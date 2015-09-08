@@ -64,11 +64,11 @@ namespace reWZ.WZProperties {
                             name = wzbr.ReadWZString(File._encrypted);
                             break;
                         default:
-                            WZFile.Die("Unknown object type in WzDirectory.");
+                            WZUtil.Die("Unknown object type in WzDirectory.");
                             break;
                     }
                     if (name == null)
-                        WZFile.Die("Failed to read WZDirectory entry name.");
+                        WZUtil.Die("Failed to read WZDirectory entry name.");
                     int size = wzbr.ReadWZInt();
                     wzbr.ReadWZInt();
                     uint woffset = wzbr.ReadWZOffset(File._fstart);

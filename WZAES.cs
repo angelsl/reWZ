@@ -95,49 +95,41 @@ namespace reWZ {
 
         private static byte[] GenerateKey(byte[] iv, byte[] aesKey) {
             using (MemoryStream memStream = new MemoryStream(0x10000))
-            using (AesManaged aem = new AesManaged {KeySize = 256, Key = aesKey, Mode = CipherMode.ECB})
+            using (AesManaged aem = new AesManaged {KeySize = 256, Key = aesKey, Mode = CipherMode.CBC, IV = iv})
             using (CryptoStream cStream = new CryptoStream(memStream, aem.CreateEncryptor(), CryptoStreamMode.Write)) {
-                cStream.Write(iv, 0, 16);
-                for (int i = 0; i < (0x10000 - 16); i += 16)
-                    cStream.Write(memStream.GetBuffer(), i, 16);
+                cStream.Write(new byte[0x10000], 0, 0x10000);
                 cStream.Flush();
                 return memStream.ToArray();
             }
         }
 
         internal string DecryptASCIIString(byte[] asciiBytes, bool encrypted = true) {
-            int len = asciiBytes.Length;
-            if (len > _asciiEncKey.Length) {
-                throw new NotSupportedException(
-                    $"Cannot decrypt ASCII string longer than {_asciiEncKey.Length} characters. Please report this!");
-            }
-            //char[] ret = new char[len];
-            byte[] key = encrypted ? _asciiEncKey : _asciiKey;
-            for (int i = 0; i < len; ++i)
-                asciiBytes[i] ^= key[i];
-            return Encoding.ASCII.GetString(asciiBytes);
+            return Encoding.ASCII.GetString(DecryptData(asciiBytes, encrypted ? _asciiEncKey : _asciiKey));
         }
 
         internal string DecryptUnicodeString(byte[] ushortChars, bool encrypted = true) {
-            int len = ushortChars.Length;
-            if (len > _unicodeEncKey.Length) {
-                throw new NotSupportedException(
-                    $"Cannot decrypt UTF-16 string longer than {_unicodeEncKey.Length} characters. Please report this!");
-            }
-            //char[] ret = new char[len];
-            byte[] key = encrypted ? _unicodeEncKey : _unicodeKey;
-            for (int i = 0; i < len; ++i)
-                ushortChars[i] ^= key[i];
-            return Encoding.Unicode.GetString(ushortChars);
+            return Encoding.Unicode.GetString(DecryptData(ushortChars, encrypted ? _unicodeEncKey : _unicodeKey));
         }
 
-        internal unsafe byte[] DecryptBytes(byte[] bytes) {
-            fixed (byte* c = bytes, k = _wzKey) {
-                byte* d = c, l = k;
-                for (int i = 0; i < bytes.Length; ++i)
+        internal byte[] DecryptBytes(byte[] bytes) {
+            return DecryptData(bytes, _wzKey);
+        }
+
+        private unsafe static byte[] DecryptData(byte[] data, byte[] key) {
+            // TODO: generate more bytes on demand
+            if (data.Length > key.Length) {
+                throw new NotSupportedException(
+                    $"Cannot decrypt data longer than {key.Length} characters. Please report this!");
+            }
+
+            fixed (byte* c = data, k = key)
+            {
+                byte* d = c, l = k, e = d + data.Length;
+                while (d < e)
                     *(d++) ^= *(l++);
             }
-            return bytes;
+
+            return data;
         }
     }
 

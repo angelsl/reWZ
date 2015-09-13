@@ -151,7 +151,7 @@ namespace reWZ.WZProperties {
             WZObject ret = this;
             while (ret is WZUOLProperty) {
                 ret = ((WZUOLProperty) ret).Target;
-                if (traversed.Contains(ret))
+                if (ret == null || traversed.Contains(ret))
                     return null;
                 traversed.Add(ret);
             }

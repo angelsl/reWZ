@@ -28,6 +28,7 @@
 // module is a module which is not derived from or based on reWZ.
 
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -350,12 +351,16 @@ namespace reWZ {
         }
 
         internal static WZObject ResolvePath(WZObject start, string path) {
-            return
-                (path.StartsWith("/") ? path.Substring(1) : path).Split('/')
-                    .Where(node => node != ".")
-                    .Aggregate(start,
-                        (current, node) =>
-                            node == ".." ? current.Parent : current[node]);
+            try {
+                return
+                    (path.StartsWith("/") ? path.Substring(1) : path).Split('/')
+                        .Where(node => node != ".")
+                        .Aggregate(start,
+                            (current, node) =>
+                                node == ".." ? current.Parent : current[node]);
+            } catch (KeyNotFoundException) {
+                return null;
+            }
         }
     }
 }

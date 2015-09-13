@@ -93,7 +93,14 @@ namespace reWZ.WZProperties {
                 _guid1 = r.ReadGuidArray();
                 _guid2 = r.ReadGuidArray();
                 _guid3 = r.ReadGuidArray();
-                _header = r.ReadBytes(r.ReadByte());
+                _header = r.ReadBytes(r.ReadWZInt());
+
+                if (_header.Length != 18 + GetCbSize(_header))
+                    File._aes.DecryptBytes(_header);
+
+                if (_header.Length != 18 + GetCbSize(_header))
+                    throw new WZException($"Failed to parse audio header at node {Path}");
+
                 result = r.ReadBytes(blockLen);
                 return true;
             } else {
@@ -105,6 +112,10 @@ namespace reWZ.WZProperties {
                 result = null;
                 return false;
             }
+        }
+
+        private static int GetCbSize(byte[] header) {
+            return header[16] | (header[17] << 8);
         }
     }
 }

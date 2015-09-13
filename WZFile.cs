@@ -340,7 +340,7 @@ namespace reWZ {
         LowMemory = 32
     }
 
-    internal sealed class WZUtil {
+    internal static class WZUtil {
         internal static T Die<T>(string cause) {
             throw new WZException(cause);
         }

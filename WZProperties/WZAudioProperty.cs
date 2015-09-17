@@ -81,12 +81,12 @@ namespace reWZ.WZProperties {
         /// </summary>
         /// <filterpriority>2</filterpriority>
         public void Dispose() {
-            _parsed = false;
             _value = null;
             _header = null;
             _guid1 = null;
             _guid2 = null;
             _guid3 = null;
+            _parsed = false;
         }
 
         internal override bool Parse(WZBinaryReader r, bool initial, out byte[] result) {

@@ -42,8 +42,6 @@ namespace reWZ.WZProperties {
     ///     disposed.
     /// </summary>
     public sealed class WZCanvasProperty : WZDelayedProperty<Bitmap>, IDisposable {
-        private GCHandle _gcH;
-
         internal WZCanvasProperty(string name, WZObject parent, WZBinaryReader br, WZImage container)
             : base(name, parent, container, true, WZObjectType.Canvas) {}
 
@@ -51,18 +49,9 @@ namespace reWZ.WZProperties {
         ///     Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
         public void Dispose() {
-            if (!_parsed || _value == null)
-                return;
-            _value.Dispose();
-            _gcH.Free();
+            _value?.Dispose();
+            _value = null;
             _parsed = false;
-        }
-
-        /// <summary>
-        ///     Destructor.
-        /// </summary>
-        ~WZCanvasProperty() {
-            Dispose();
         }
 
         internal override bool Parse(WZBinaryReader br, bool initial, out Bitmap result) {
@@ -134,48 +123,65 @@ namespace reWZ.WZProperties {
             height >>= scale;
             switch (format1) {
                 case 0x001: {
-                    byte[] argb = new byte[width*height*4];
-                    fixed (byte* r = argb, t = dec) {
-                        byte* s = r, u = t;
-                        for (int i = 0; i < decLen; i++) {
-                            *(s++) = (byte) (((*u) & 0x0F)*0x11);
-                            *(s++) = (byte) (((*(u++) & 0xF0) >> 4)*0x11);
-                        }
+                    if (decLen != width * height * 2) {
+                         Debug.WriteLine("Warning; dec.Length != 2wh; ARGB4444");
                     }
-                    decLen *= 2;
-                    dec = argb;
-                    goto case 0x002;
+                    Bitmap ret = new Bitmap(width, height, PixelFormat.Format32bppArgb);
+                    BitmapData bd = ret.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly,
+                        PixelFormat.Format32bppArgb);
+                    try {
+                        fixed (byte* t = dec) {
+                            byte* u = t, s = (byte*)bd.Scan0;
+                            for (int i = 0; i < decLen; i++) {
+                                *(s++) = (byte) (((*u) & 0x0F)*0x11);
+                                *(s++) = (byte) (((*(u++) & 0xF0) >> 4)*0x11);
+                            }
+                        }
+                    } finally {
+                        ret.UnlockBits(bd);
+                    }
+                    return ret;
                 }
                 case 0x002: {
                     if (decLen != width*height*4) {
                         Debug.WriteLine("Warning; dec.Length != 4wh; 32BPP");
-                        byte[] proper = new byte[width*height*4];
-                        Buffer.BlockCopy(dec, 0, proper, 0, Math.Min(proper.Length, decLen));
-                        dec = proper;
                     }
-                    _gcH = GCHandle.Alloc(dec, GCHandleType.Pinned);
-                    return new Bitmap(width, height, width << 2, PixelFormat.Format32bppArgb, _gcH.AddrOfPinnedObject());
+                    Bitmap ret = new Bitmap(width, height, PixelFormat.Format32bppArgb);
+                    BitmapData bd = ret.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly,
+                        PixelFormat.Format32bppArgb);
+                    try {
+                        Marshal.Copy(dec, 0, bd.Scan0, Math.Min(dec.Length, width * height * 4));
+                    } finally {
+                        ret.UnlockBits(bd);
+                    }
+                    return ret;
                 }
                 case 0x201: {
                     if (decLen != width*height*2) {
-                        Debug.WriteLine("Warning; dec.Length != 2wh; 16BPP");
-                        byte[] proper = new byte[width*height*2];
-                        Buffer.BlockCopy(dec, 0, proper, 0, Math.Min(proper.Length, decLen));
-                        dec = proper;
+                        Debug.WriteLine("Warning; dec.Length != 2wh; 16BPP"); // Math.Min(proper.Length, decLen)
                     }
-                    _gcH = GCHandle.Alloc(dec, GCHandleType.Pinned);
-                    return new Bitmap(width, height, width << 1, PixelFormat.Format16bppRgb565,
-                        _gcH.AddrOfPinnedObject());
+                    Bitmap ret = new Bitmap(width, height, PixelFormat.Format16bppRgb565);
+                    BitmapData bd = ret.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly,
+                        PixelFormat.Format16bppRgb565);
+                    try {
+                        Marshal.Copy(dec, 0, bd.Scan0, Math.Min(dec.Length, width * height * 2));
+                    } finally {
+                        ret.UnlockBits(bd);
+                    }
+                    return ret;
                 }
                 case 0x402: {
-                    byte[] rgba = new byte[width*height*4];
-                    fixed (byte* decP = dec) {
-                        fixed (byte* rgbaP = rgba) {
-                            UnDXT.DecompressImage(rgbaP, width, height, decP, UnDXT.kDxt3);
+                    Bitmap ret = new Bitmap(width, height, PixelFormat.Format32bppArgb);
+                    BitmapData bd = ret.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly,
+                        PixelFormat.Format32bppArgb);
+                    try {
+                        fixed (byte* decP = dec) {
+                            UnDXT.DecompressImage((byte*) bd.Scan0, width, height, decP, UnDXT.kDxt3);
                         }
+                    } finally {
+                        ret.UnlockBits(bd);
                     }
-                    _gcH = GCHandle.Alloc(rgba, GCHandleType.Pinned);
-                    return new Bitmap(width, height, width << 2, PixelFormat.Format32bppArgb, _gcH.AddrOfPinnedObject());
+                    return ret;
                 }
                 default:
                     Debug.WriteLine("Unknown bitmap type format1:{0} scale:{1}", format1, scale);

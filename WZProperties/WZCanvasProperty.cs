@@ -33,13 +33,12 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace reWZ.WZProperties {
     /// <summary>
     ///     A bitmap property, containing an image, and children.
-    ///     Please dispose any parsed Canvas properties once they are no longer needed, and before the containing WZ file is
-    ///     disposed.
     /// </summary>
     public sealed class WZCanvasProperty : WZDelayedProperty<Bitmap>, IDisposable {
         internal WZCanvasProperty(string name, WZObject parent, WZBinaryReader br, WZImage container)
@@ -103,18 +102,18 @@ namespace reWZ.WZProperties {
         }
 
         private byte[] DecryptPNG(byte[] @in) {
-            using (MemoryStream @sIn = new MemoryStream(@in, false))
-            using (BinaryReader @sBr = new BinaryReader(@sIn))
-            using (MemoryStream @sOut = new MemoryStream(@in.Length)) {
-                while (@sIn.Position < @sIn.Length) {
-                    int blockLen = @sBr.ReadInt32();
-                    @sOut.Write(File._aes.DecryptBytes(@sBr.ReadBytes(blockLen)), 0, blockLen);
+            using (MemoryStream sIn = new MemoryStream(@in, false))
+            using (BinaryReader sBr = new BinaryReader(sIn))
+            using (MemoryStream sOut = new MemoryStream(@in.Length)) {
+                while (sIn.Position < sIn.Length) {
+                    int blockLen = sBr.ReadInt32();
+                    sOut.Write(File._aes.DecryptBytes(sBr.ReadBytes(blockLen)), 0, blockLen);
                 }
-                return @sOut.ToArray();
+                return sOut.ToArray();
             }
         }
 
-        private unsafe Bitmap ParsePNG(int width, int height, int format1, int scale, byte[] data) {
+        private static unsafe Bitmap ParsePNG(int width, int height, int format1, int scale, byte[] data) {
             byte[] dec;
             using (MemoryStream @in = new MemoryStream(data, 0, data.Length))
                 dec = WZBinaryReader.Inflate(@in);
@@ -142,34 +141,16 @@ namespace reWZ.WZProperties {
                     }
                     return ret;
                 }
-                case 0x002: {
+                case 0x002:
                     if (decLen != width*height*4) {
                         Debug.WriteLine("Warning; dec.Length != 4wh; 32BPP");
                     }
-                    Bitmap ret = new Bitmap(width, height, PixelFormat.Format32bppArgb);
-                    BitmapData bd = ret.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly,
-                        PixelFormat.Format32bppArgb);
-                    try {
-                        Marshal.Copy(dec, 0, bd.Scan0, Math.Min(dec.Length, width * height * 4));
-                    } finally {
-                        ret.UnlockBits(bd);
-                    }
-                    return ret;
-                }
-                case 0x201: {
+                    return BitmapFromBytes(width, height, PixelFormat.Format32bppArgb, dec);
+                case 0x201:
                     if (decLen != width*height*2) {
-                        Debug.WriteLine("Warning; dec.Length != 2wh; 16BPP"); // Math.Min(proper.Length, decLen)
+                        Debug.WriteLine("Warning; dec.Length != 2wh; 16BPP");
                     }
-                    Bitmap ret = new Bitmap(width, height, PixelFormat.Format16bppRgb565);
-                    BitmapData bd = ret.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly,
-                        PixelFormat.Format16bppRgb565);
-                    try {
-                        Marshal.Copy(dec, 0, bd.Scan0, Math.Min(dec.Length, width * height * 2));
-                    } finally {
-                        ret.UnlockBits(bd);
-                    }
-                    return ret;
-                }
+                    return BitmapFromBytes(width, height, PixelFormat.Format16bppRgb565, dec);
                 case 0x402: {
                     Bitmap ret = new Bitmap(width, height, PixelFormat.Format32bppArgb);
                     BitmapData bd = ret.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly,
@@ -187,6 +168,18 @@ namespace reWZ.WZProperties {
                     Debug.WriteLine("Unknown bitmap type format1:{0} scale:{1}", format1, scale);
                     return null;
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static Bitmap BitmapFromBytes(int width, int height, PixelFormat format, byte[] data) {
+            Bitmap ret = new Bitmap(width, height, format);
+            BitmapData bd = ret.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, format);
+            try {
+                Marshal.Copy(data, 0, bd.Scan0, Math.Min(data.Length, height * bd.Stride));
+            } finally {
+                ret.UnlockBits(bd);
+            }
+            return ret;
         }
     }
 }

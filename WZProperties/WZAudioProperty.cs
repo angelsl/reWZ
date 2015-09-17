@@ -74,7 +74,7 @@ namespace reWZ.WZProperties {
             }
         }
 
-        public int Length { get; private set; }
+        public int Duration { get; private set; }
 
         /// <summary>
         ///     Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
@@ -83,12 +83,16 @@ namespace reWZ.WZProperties {
         public void Dispose() {
             _parsed = false;
             _value = null;
+            _header = null;
+            _guid1 = null;
+            _guid2 = null;
+            _guid3 = null;
         }
 
         internal override bool Parse(WZBinaryReader r, bool initial, out byte[] result) {
             r.Skip(1);
             int blockLen = r.ReadWZInt(); // sound data length
-            Length = r.ReadWZInt(); // sound duration
+            Duration = r.ReadWZInt(); // sound duration
             if (!initial || (File._flag & WZReadSelection.EagerParseAudio) == WZReadSelection.EagerParseAudio) {
                 _guid1 = r.ReadGuidArray();
                 _guid2 = r.ReadGuidArray();

@@ -1,0 +1,3 @@
+[submodule "Utilitas"]
+	path = Utilitas
+	url = https://github.com/angelsl/misc-Utilitas.git

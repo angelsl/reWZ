@@ -40,67 +40,48 @@ namespace reWZ.WZProperties {
         }
 
         private void Parse(WZBinaryReader wzbr, long offset) {
-            lock (File._lock) {
-                wzbr.Seek(offset);
-                int entryCount = wzbr.ReadWZInt();
-                for (int i = 0; i < entryCount; ++i) {
-                    byte type = wzbr.ReadByte();
-                    string name = null;
-                    switch (type) {
-                        case 1:
-                            wzbr.Skip(10);
-                            continue;
-                        case 2:
-                            int x = wzbr.ReadInt32();
-                            wzbr.PeekFor(() => {
-                                wzbr.Seek(x + File._fstart);
-                                type = wzbr.ReadByte();
-                                name = wzbr.ReadWZString(File._encrypted);
-                            });
-
-                            break;
-                        case 3:
-                        case 4:
+            wzbr.Seek(offset);
+            int entryCount = wzbr.ReadWZInt();
+            for (int i = 0; i < entryCount; ++i) {
+                byte type = wzbr.Read();
+                string name = null;
+                switch (type) {
+                    case 1:
+                        wzbr.Skip(10);
+                        continue;
+                    case 2:
+                        int x = wzbr.ReadInt32();
+                        wzbr.PeekFor(() => {
+                            wzbr.Seek(x + File._fstart);
+                            type = wzbr.Read();
                             name = wzbr.ReadWZString(File._encrypted);
+                        });
+
+                        break;
+                    case 3:
+                    case 4:
+                        name = wzbr.ReadWZString(File._encrypted);
+                        break;
+                    default:
+                        WZUtil.Die("Unknown object type in WzDirectory.");
+                        break;
+                }
+                if (name == null)
+                    WZUtil.Die("Failed to read WZDirectory entry name.");
+                int size = wzbr.ReadWZInt();
+                wzbr.ReadWZInt();
+                uint woffset = wzbr.ReadWZOffset(File._fstart);
+                wzbr.PeekFor(() => {
+                    switch (type) {
+                        case 3:
+                            Add(new WZDirectory(name, this, File, wzbr, woffset));
                             break;
-                        default:
-                            WZUtil.Die("Unknown object type in WzDirectory.");
+                        case 4:
+                            Add(new WZImage(name, this, File,
+                                File.GetSubstream(woffset, size)));
                             break;
                     }
-                    if (name == null)
-                        WZUtil.Die("Failed to read WZDirectory entry name.");
-                    int size = wzbr.ReadWZInt();
-                    wzbr.ReadWZInt();
-                    uint woffset = wzbr.ReadWZOffset(File._fstart);
-                    wzbr.PeekFor(() => {
-                        switch (type) {
-                            case 3:
-                                Add(new WZDirectory(name, this, File, wzbr, woffset));
-                                break;
-                            case 4:
-                                if (((File._flag & WZReadSelection.EagerParseCanvas) ==
-                                     WZReadSelection.EagerParseCanvas ||
-                                     (File._flag & WZReadSelection.EagerParseAudio) ==
-                                     WZReadSelection.EagerParseAudio ||
-                                     (File._flag & WZReadSelection.EagerParseStrings) ==
-                                     WZReadSelection.EagerParseStrings) && !(File._file is MemoryStream) &&
-                                    (File._flag & WZReadSelection.LowMemory) != WZReadSelection.LowMemory) {
-                                    Add(new WZImage(name, this, File,
-                                        new WZBinaryReader(File.GetSubbytes(woffset, size), File._aes,
-                                            wzbr.VersionHash),
-                                        () =>
-                                            new WZBinaryReader(File.GetSubstream(woffset, size), File._aes,
-                                                wzbr.VersionHash)));
-                                } else {
-                                    Add(new WZImage(name, this, File,
-                                        new WZBinaryReader(File.GetSubstream(woffset, size), File._aes,
-                                            wzbr.VersionHash)));
-                                }
-
-                                break;
-                        }
-                    });
-                }
+                });
             }
         }
     }

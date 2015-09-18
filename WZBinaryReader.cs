@@ -32,35 +32,27 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
+using Utilitas;
 
 namespace reWZ {
-    internal sealed class WZBinaryReader : BinaryReader {
+    internal sealed class WZBinaryReader : PointerStream {
         private readonly WZAES _aes;
 
-        internal WZBinaryReader(Stream inStream, WZAES aes, uint versionHash) : base(inStream, Encoding.ASCII) {
+        internal unsafe WZBinaryReader(byte* start, long size, WZAES aes, uint versionHash) : base(start, size, false) {
             _aes = aes;
             VersionHash = versionHash;
         }
 
         internal uint VersionHash { get; set; }
 
-        internal void Close(bool disposeStream) {
-            Dispose(disposeStream);
+        internal void Seek(long pos) {
+            Position = pos;
         }
 
-        /// <summary>
-        ///     Sets the position within the backing stream to the specified value.
-        /// </summary>
-        /// <param name="offset">
-        ///     The new position within the backing stream. This is relative to the <paramref name="loc" />
-        ///     parameter, and can be positive or negative.
-        /// </param>
-        /// <param name="loc">
-        ///     A value of type <see cref="T:System.IO.SeekOrigin" /> , which acts as the seek reference point. This
-        ///     defaults to <code>SeekOrigin.Begin</code> .
-        /// </param>
-        internal void Seek(long offset, SeekOrigin loc = SeekOrigin.Begin) {
-            BaseStream.Seek(offset, loc);
+        internal unsafe WZBinaryReader Clone() {
+            WZBinaryReader ret = new WZBinaryReader(_start, _end - _start, _aes, VersionHash);
+            ret._cur = _cur;
+            return ret;
         }
 
         /// <summary>
@@ -68,7 +60,7 @@ namespace reWZ {
         /// </summary>
         /// <param name="count"> The amount of bytes to skip. </param>
         internal void Skip(long count) {
-            BaseStream.Position += count;
+            Position += count;
         }
 
         /// <summary>
@@ -77,11 +69,11 @@ namespace reWZ {
         /// </summary>
         /// <param name="result"> The delegate to execute. </param>
         internal void PeekFor(Action result) {
-            long orig = BaseStream.Position;
+            long orig = Position;
             try {
                 result();
             } finally {
-                BaseStream.Position = orig;
+                Position = orig;
             }
         }
 
@@ -93,11 +85,11 @@ namespace reWZ {
         /// <param name="result"> The delegate to execute. </param>
         /// <returns> The object returned by the delegate. </returns>
         internal T PeekFor<T>(Func<T> result) {
-            long orig = BaseStream.Position;
+            long orig = Position;
             try {
                 return result();
             } finally {
-                BaseStream.Position = orig;
+                Position = orig;
             }
         }
 
@@ -130,7 +122,7 @@ namespace reWZ {
         /// <returns> The read string. </returns>
         private string ReadWZStringAtOffset(long offset, bool encrypted = true) {
             return PeekFor(() => {
-                BaseStream.Position = offset;
+                Position = offset;
                 return ReadWZString(encrypted);
             });
         }
@@ -149,7 +141,7 @@ namespace reWZ {
         internal string ReadASCIIZString() {
             StringBuilder sb = new StringBuilder();
             byte b;
-            while ((b = ReadByte()) != 0)
+            while ((b = Read()) != 0)
                 sb.Append((char) b);
             return sb.ToString();
         }
@@ -208,7 +200,7 @@ namespace reWZ {
 
         internal uint ReadWZOffset(uint fstart) {
             unchecked {
-                uint ret = ((((uint) BaseStream.Position - fstart) ^ 0xFFFFFFFF)*VersionHash) - WZAES.OffsetKey;
+                uint ret = ((((uint) Position - fstart) ^ 0xFFFFFFFF)*VersionHash) - WZAES.OffsetKey;
                 return (((ret << (int) ret) | (ret >> (int) (32 - ret))) ^ ReadUInt32()) + (fstart*2);
             }
         }
@@ -234,97 +226,6 @@ namespace reWZ {
                     @out.Write(dec, 0, len);
                 return @out.ToArray();
             }
-        }
-    }
-
-    internal sealed class Substream : Stream {
-        private readonly Stream _backing;
-        private readonly long _end; // end is exclusive
-        private readonly long _origin; // end is exclusive
-        private long _posInBacking;
-
-        internal Substream(Stream backing, long start, long length) {
-            if (!backing.CanSeek)
-                throw new ArgumentException("A Substream's backing stream must be seekable!", nameof(backing));
-            if (start >= backing.Length)
-                throw new ArgumentOutOfRangeException(nameof(start), "The Substream falls outside the backing stream!");
-            _backing = backing;
-            _origin = start;
-            Length = length;
-            _end = start + length;
-            if (_end > backing.Length)
-                throw new ArgumentOutOfRangeException(nameof(length), "The Substream falls outside the backing stream!");
-        }
-
-        public override bool CanRead => true;
-
-        public override bool CanSeek => true;
-
-        public override bool CanWrite => false;
-
-        public override long Length { get; }
-
-        public override long Position {
-            get { return _posInBacking - _origin; }
-            set { _posInBacking = value + _origin; }
-        }
-
-        public override void Flush() {}
-
-        public override long Seek(long offset, SeekOrigin origin) {
-            long tPos;
-            switch (origin) {
-                case SeekOrigin.Begin:
-                    tPos = _origin + offset;
-                    break;
-                case SeekOrigin.Current:
-                    tPos = _posInBacking + offset;
-                    break;
-                case SeekOrigin.End:
-                    tPos = _end + offset;
-                    break;
-                default:
-                    throw new ArgumentException("Invalid SeekOrigin specified.", nameof(origin));
-            }
-
-            if (tPos >= _end || tPos < _origin)
-                throw new ArgumentOutOfRangeException(nameof(offset), "You cannot seek out of the substream!");
-            return (_posInBacking = tPos);
-        }
-
-        public override void SetLength(long value) {
-            throw new NotSupportedException("A Substream cannot be resized.");
-        }
-
-        public override int Read(byte[] buffer, int offset, int count) {
-            long origPos = _backing.Position;
-            if (origPos != _posInBacking)
-                _backing.Position = _posInBacking;
-            count = (int) Math.Min(count, _end - _posInBacking);
-            if (count == 0)
-                return 0;
-            count = _backing.Read(buffer, offset, count);
-            _posInBacking += count;
-            Debug.Assert(_posInBacking == _backing.Position);
-            //_backing.Position = origPos;
-            return count;
-        }
-
-        public override void Write(byte[] buffer, int offset, int count) {
-            throw new NotSupportedException("A Substream is not writable.");
-        }
-
-        public override int ReadByte() {
-            if (_posInBacking >= _end)
-                return -1;
-            long origPos = _backing.Position;
-            if (origPos != _posInBacking)
-                _backing.Position = _posInBacking;
-            int r = _backing.ReadByte();
-            ++_posInBacking;
-            Debug.Assert(_posInBacking == _backing.Position);
-            //_backing.Position = origPos;
-            return r;
         }
     }
 }

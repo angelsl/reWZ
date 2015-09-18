@@ -33,21 +33,20 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using reWZ.WZProperties;
+using Utilitas;
 
 namespace reWZ {
     /// <summary>
     ///     A WZ file.
     /// </summary>
     public sealed class WZFile : IDisposable {
-        private readonly bool _disposeStream;
         internal readonly bool _encrypted;
         internal readonly WZReadSelection _flag;
-        internal readonly object _lock = new object();
         internal readonly WZVariant _variant;
         internal WZAES _aes;
-        internal Stream _file;
         internal uint _fstart;
         private WZBinaryReader _r;
+        private readonly IBytePointerObject _bpo;
 
         /// <summary>
         ///     Creates and loads a WZ file from a path. The Stream created will be disposed when the WZ file is disposed.
@@ -56,27 +55,13 @@ namespace reWZ {
         /// <param name="variant"> The variant of this WZ file. </param>
         /// <param name="encrypted"> Whether the WZ file is encrypted outside a WZ image. </param>
         /// <param name="flag"> WZ parsing flags. </param>
-        public WZFile(string path, WZVariant variant, bool encrypted, WZReadSelection flag = WZReadSelection.None)
-            : this(
-                new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 6144, FileOptions.RandomAccess),
-                variant, encrypted, flag) {
-            _disposeStream = true;
-        }
-
-        /// <summary>
-        ///     Creates and loads a WZ file. The Stream passed will not be closed when the WZ file is disposed.
-        /// </summary>
-        /// <param name="input"> The stream containing the WZ file. </param>
-        /// <param name="variant"> The variant of this WZ file. </param>
-        /// <param name="encrypted"> Whether the WZ file is encrypted outside a WZ image. </param>
-        /// <param name="flag"> WZ parsing flags. </param>
-        public WZFile(Stream input, WZVariant variant, bool encrypted, WZReadSelection flag = WZReadSelection.None) {
-            _file = input;
+        public unsafe WZFile(string path, WZVariant variant, bool encrypted, WZReadSelection flag = WZReadSelection.None) {
             _variant = variant;
             _encrypted = encrypted;
             _flag = flag;
             _aes = new WZAES(_variant);
-            _r = new WZBinaryReader(_file, _aes, 0);
+            _bpo = new MemoryMappedFile(path);
+            _r = new WZBinaryReader(_bpo.Pointer, _bpo.Length, _aes, 0);
             Parse();
         }
 
@@ -102,16 +87,14 @@ namespace reWZ {
         }
 
         private void Parse() {
-            lock (_lock) {
-                _r.Seek(0);
-                if (_r.ReadASCIIString(4) != "PKG1")
-                    WZUtil.Die("WZ file has invalid header; file does not have magic \"PKG1\".");
-                _r.Skip(8);
-                _fstart = _r.ReadUInt32();
-                _r.ReadASCIIZString();
-                GuessVersion();
-                MainDirectory = new WZDirectory("", null, this, _r, _fstart + 2);
-            }
+            _r.Seek(0);
+            if (_r.ReadASCIIString(4) != "PKG1")
+                WZUtil.Die("WZ file has invalid header; file does not have magic \"PKG1\".");
+            _r.Skip(8);
+            _fstart = _r.ReadUInt32();
+            _r.ReadASCIIZString();
+            GuessVersion();
+            MainDirectory = new WZDirectory("", null, this, _r, _fstart + 2);
         }
 
         private void GuessVersion() {
@@ -146,7 +129,7 @@ namespace reWZ {
             offset = -1;
             int count = _r.ReadWZInt();
             for (int i = 0; i < count; i++) {
-                byte type = _r.ReadByte();
+                byte type = _r.Read();
                 switch (type) {
                     case 1:
                         _r.Skip(10);
@@ -155,7 +138,7 @@ namespace reWZ {
                         int x = _r.ReadInt32();
                         type = _r.PeekFor(() => {
                             _r.Seek(x + _fstart);
-                            return _r.ReadByte();
+                            return _r.Read();
                         });
                         break;
                     case 3:
@@ -169,7 +152,7 @@ namespace reWZ {
 
                 _r.ReadWZInt();
                 _r.ReadWZInt();
-                offset = _r.BaseStream.Position;
+                offset = _r.Position;
                 if (type == 4) {
                     success = true;
                     break;
@@ -203,7 +186,7 @@ namespace reWZ {
         private long TryFindImageOffset(int count, long offset, out bool success) {
             success = false;
             for (int i = 0; i < count; i++) {
-                byte type = _r.ReadByte();
+                byte type = _r.Read();
                 switch (type) {
                     case 1:
                         _r.Skip(10);
@@ -212,7 +195,7 @@ namespace reWZ {
                         int x = _r.ReadInt32();
                         type = _r.PeekFor(() => {
                             _r.Seek(x + _fstart);
-                            return _r.ReadByte();
+                            return _r.Read();
                         });
                         break;
                     case 3:
@@ -226,7 +209,7 @@ namespace reWZ {
 
                 _r.ReadWZInt();
                 _r.ReadWZInt();
-                offset = _r.BaseStream.Position;
+                offset = _r.Position;
                 _r.Skip(4);
                 if (type != 4)
                     continue;
@@ -261,17 +244,8 @@ namespace reWZ {
             return success;
         }
 
-        internal Stream GetSubbytes(long offset, long length) {
-            byte[] @out = new byte[length];
-            long p = _file.Position;
-            _file.Position = offset;
-            _file.Read(@out, 0, (int) length);
-            _file.Position = p;
-            return new MemoryStream(@out, false);
-        }
-
-        internal Stream GetSubstream(long offset, long length) {
-            return new Substream(_file, offset, length);
+        internal unsafe WZBinaryReader GetSubstream(long offset, long length) {
+            return new WZBinaryReader(_bpo.Pointer + offset, length, _aes, _r.VersionHash);
         }
 
         #region IDisposable Members
@@ -285,11 +259,11 @@ namespace reWZ {
         }
 
         private void Dispose(bool disposing) {
-            _r.Close(disposing && _disposeStream);
+            if (disposing)
+                _bpo.Dispose();
             MainDirectory = null;
             _aes = null;
             _r = null;
-            _file = null;
         }
 
         #endregion
@@ -334,11 +308,6 @@ namespace reWZ {
         ///     Set this flag to disable lazy loading of WZ images.
         /// </summary>
         EagerParseImage = 16,
-
-        /// <summary>
-        ///     Set this flag to disable reading entire WZ images into memory when any of the eager load flags are set.
-        /// </summary>
-        LowMemory = 32
     }
 
     internal static class WZUtil {

@@ -38,12 +38,9 @@ namespace reWZ.WZProperties {
         internal bool _encrypted;
         private bool _parsed;
         internal WZBinaryReader _r;
-        private Func<WZBinaryReader> _transform;
 
-        internal WZImage(string name, WZObject parent, WZFile file, WZBinaryReader reader,
-            Func<WZBinaryReader> trans = null) : base(name, parent, file, true, WZObjectType.Image) {
+        internal WZImage(string name, WZObject parent, WZFile file, WZBinaryReader reader) : base(name, parent, file, true, WZObjectType.Image) {
             _r = reader;
-            _transform = trans;
             if ((file._flag & WZReadSelection.EagerParseImage) == WZReadSelection.EagerParseImage)
                 Parse();
         }
@@ -90,30 +87,24 @@ namespace reWZ.WZProperties {
         }
 
         private void Parse() {
-            lock (File._lock) {
-                _r.Seek(0);
-                if (_r.ReadByte() != 0x73)
-                    WZUtil.Die("WZImage with invalid header (not beginning with 0x73!)");
-                if ((int) File._variant == 2)
-                    _encrypted = false;
-                else if (_r.PeekFor(() => _r.ReadWZString()) == "Property")
-                    _encrypted = true;
-                else if (_r.PeekFor(() => _r.ReadWZString(false)) == "Property")
-                    _encrypted = false;
-                else
-                    WZUtil.Die("WZImage with invalid header (no Property string! check your WZVariant)");
-                if (_r.ReadWZString(_encrypted) != "Property")
-                    WZUtil.Die("Failed to determine image encryption!");
-                if (_r.ReadUInt16() != 0)
-                    WZUtil.Die("WZImage with invalid header (no zero UInt16!)");
-                WZExtendedParser.ParsePropertyList(_r, this, this, _encrypted).ForEach(Add);
-                _parsed = true;
-                if (_transform == null)
-                    return;
-                _r.Close();
-                _r = _transform();
-                _transform = null;
-            }
+            _r.Seek(0);
+            if (_r.ReadByte() != 0x73)
+                WZUtil.Die("WZImage with invalid header (not beginning with 0x73!)");
+            if ((int) File._variant == 2)
+                _encrypted = false;
+            else if (_r.PeekFor(() => _r.ReadWZString()) == "Property")
+                _encrypted = true;
+            else if (_r.PeekFor(() => _r.ReadWZString(false)) == "Property")
+                _encrypted = false;
+            else
+                WZUtil.Die("WZImage with invalid header (no Property string! check your WZVariant)");
+            if (_r.ReadWZString(_encrypted) != "Property")
+                WZUtil.Die("Failed to determine image encryption!");
+            if (_r.ReadUInt16() != 0)
+                WZUtil.Die("WZImage with invalid header (no zero UInt16!)");
+            foreach (WZObject child in WZExtendedParser.ParsePropertyList(_r, this, this, _encrypted))
+                Add(child);
+            _parsed = true;
         }
     }
 }

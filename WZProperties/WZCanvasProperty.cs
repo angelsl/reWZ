@@ -41,6 +41,7 @@ namespace reWZ.WZProperties {
     ///     A bitmap property, containing an image, and children.
     /// </summary>
     public sealed class WZCanvasProperty : WZDelayedProperty<Bitmap>, IDisposable {
+        private long _afterChildren;
         internal WZCanvasProperty(string name, WZObject parent, WZBinaryReader br, WZImage container)
             : base(name, parent, container, true, WZObjectType.Canvas) {}
 
@@ -56,16 +57,21 @@ namespace reWZ.WZProperties {
         internal override bool Parse(WZBinaryReader br, bool initial, out Bitmap result) {
             bool skip = (File._flag & WZReadSelection.NeverParseCanvas) == WZReadSelection.NeverParseCanvas,
                 eager = (File._flag & WZReadSelection.EagerParseCanvas) == WZReadSelection.EagerParseCanvas;
-            if (skip && eager) {
-                result = null;
-                return WZUtil.Die<bool>("Both NeverParseCanvas and EagerParseCanvas are set.");
-            }
-            br.Skip(1);
-            if (br.ReadByte() == 1) {
-                br.Skip(2);
-                List<WZObject> l = WZExtendedParser.ParsePropertyList(br, this, Image, Image._encrypted);
-                if (ChildCount == 0)
-                    l.ForEach(Add);
+            if (initial) {
+                if (skip && eager) {
+                    result = null;
+                    return WZUtil.Die<bool>("Both NeverParseCanvas and EagerParseCanvas are set.");
+                }
+                br.Skip(1);
+                if (br.ReadByte() == 1) {
+                    br.Skip(2);
+                    List<WZObject> l = WZExtendedParser.ParsePropertyList(br, this, Image, Image._encrypted);
+                    if (ChildCount == 0)
+                        l.ForEach(Add);
+                }
+                _afterChildren = br.Position;
+            } else {
+                br.Position = _afterChildren;
             }
             int width = br.ReadWZInt(); // width
             int height = br.ReadWZInt(); // height

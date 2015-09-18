@@ -76,7 +76,7 @@ namespace reWZ.WZProperties {
             : base(name, parent, ReadSingle(reader), container, false, WZObjectType.Single) {}
 
         private static float ReadSingle(WZBinaryReader reader) {
-            byte t = reader.ReadByte();
+            byte t = reader.Read();
             return t == 0x80
                 ? reader.ReadSingle()
                 : (t == 0 ? 0f : WZUtil.Die<float>("Unknown byte while reading WZSingleProperty."));

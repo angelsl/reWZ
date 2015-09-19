@@ -34,43 +34,16 @@ namespace reWZ.WZProperties {
     ///     A sound property.
     /// </summary>
     public sealed class WZAudioProperty : WZDelayedProperty<byte[]>, IDisposable {
-        private Guid[] _guid1;
-        private Guid[] _guid2;
-        private Guid[] _guid3;
         private byte[] _header;
 
-        internal WZAudioProperty(string name, WZObject parent, WZImage container)
-            : base(name, parent, container, false, WZObjectType.Audio) {}
+        internal WZAudioProperty(string name, WZObject parent, WZBinaryReader reader, WZImage container)
+            : base(name, parent, container, reader, false, WZObjectType.Audio) {}
 
         public byte[] Header {
             get {
                 if (!_parsed)
                     CheckParsed();
                 return _header;
-            }
-        }
-
-        public Guid[] Guid1 {
-            get {
-                if (!_parsed)
-                    CheckParsed();
-                return _guid1;
-            }
-        }
-
-        public Guid[] Guid2 {
-            get {
-                if (!_parsed)
-                    CheckParsed();
-                return _guid2;
-            }
-        }
-
-        public Guid[] Guid3 {
-            get {
-                if (!_parsed)
-                    CheckParsed();
-                return _guid3;
             }
         }
 
@@ -83,9 +56,6 @@ namespace reWZ.WZProperties {
         public void Dispose() {
             _value = null;
             _header = null;
-            _guid1 = null;
-            _guid2 = null;
-            _guid3 = null;
             _parsed = false;
         }
 
@@ -93,10 +63,10 @@ namespace reWZ.WZProperties {
             r.Skip(1);
             int blockLen = r.ReadWZInt(); // sound data length
             Duration = r.ReadWZInt(); // sound duration
+            r.Skip(16 * r.ReadByte());
+            r.Skip(16 * r.ReadByte());
+            r.Skip(16 * r.ReadByte());
             if (!initial || (File._flag & WZReadSelection.EagerParseAudio) == WZReadSelection.EagerParseAudio) {
-                _guid1 = r.ReadGuidArray();
-                _guid2 = r.ReadGuidArray();
-                _guid3 = r.ReadGuidArray();
                 _header = r.ReadBytes(r.ReadWZInt());
 
                 if (_header.Length != 18 + GetCbSize(_header))
@@ -108,10 +78,7 @@ namespace reWZ.WZProperties {
                 result = r.ReadBytes(blockLen);
                 return true;
             } else {
-                r.Skip(16*r.ReadByte());
-                r.Skip(16*r.ReadByte());
-                r.Skip(16*r.ReadByte());
-                r.Skip(r.ReadByte());
+                r.Skip(r.ReadWZInt());
                 r.Skip(blockLen);
                 result = null;
                 return false;

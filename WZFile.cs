@@ -33,7 +33,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using reWZ.WZProperties;
-using Utilitas;
+using UsefulThings;
 
 namespace reWZ {
     /// <summary>
@@ -43,9 +43,9 @@ namespace reWZ {
         internal readonly bool _encrypted;
         internal readonly WZReadSelection _flag;
         internal readonly WZVariant _variant;
-        internal WZAES _aes;
+        internal readonly WZAES _aes;
         internal uint _fstart;
-        private WZBinaryReader _r;
+        private readonly WZBinaryReader _r;
         private readonly IBytePointerObject _bpo;
 
         /// <summary>
@@ -88,11 +88,10 @@ namespace reWZ {
 
         private void Parse() {
             _r.Seek(0);
-            if (_r.ReadASCIIString(4) != "PKG1")
+            if (_r.ReadInt32() != 0x31474B50)
                 WZUtil.Die("WZ file has invalid header; file does not have magic \"PKG1\".");
             _r.Skip(8);
             _fstart = _r.ReadUInt32();
-            _r.ReadASCIIZString();
             GuessVersion();
             MainDirectory = new WZDirectory("", null, this, _r, _fstart + 2);
         }
@@ -102,17 +101,13 @@ namespace reWZ {
             short ver = _r.ReadInt16();
             bool success;
             long offset = TryFindImageInDir(out success);
-            if (success) {
-                success = GuessVersionWithImageOffsetAt(ver, offset);
-                _r.Seek(_fstart);
-                if (success)
-                    return;
+            if (success && GuessVersionWithImageOffsetAt(ver, offset)) {
+                return;
             }
 
             for (ushort v = 0; v < ushort.MaxValue; v++) {
-                uint vHash = v.ToString(CultureInfo.InvariantCulture)
-                    .Aggregate<char, uint>(0, (current, t) => (32*current) + t + 1);
-                if ((0xFF ^ (vHash >> 24) ^ (vHash << 8 >> 24) ^ (vHash << 16 >> 24) ^ (vHash << 24 >> 24)) != ver)
+                uint vHash;
+                if (!VersionHash(v, ver, out vHash))
                     continue;
                 _r.VersionHash = vHash;
                 if (DepthFirstImageSearch(out offset))
@@ -121,7 +116,6 @@ namespace reWZ {
 
             if (!GuessVersionWithImageOffsetAt(ver, offset))
                 WZUtil.Die("Unable to guess WZ version.");
-            _r.Seek(_fstart);
         }
 
         private bool DepthFirstImageSearch(out long offset) {
@@ -129,7 +123,7 @@ namespace reWZ {
             offset = -1;
             int count = _r.ReadWZInt();
             for (int i = 0; i < count; i++) {
-                byte type = _r.Read();
+                byte type = _r.ReadByte();
                 switch (type) {
                     case 1:
                         _r.Skip(10);
@@ -138,7 +132,7 @@ namespace reWZ {
                         int x = _r.ReadInt32();
                         type = _r.PeekFor(() => {
                             _r.Seek(x + _fstart);
-                            return _r.Read();
+                            return _r.ReadByte();
                         });
                         break;
                     case 3:
@@ -186,7 +180,7 @@ namespace reWZ {
         private long TryFindImageOffset(int count, long offset, out bool success) {
             success = false;
             for (int i = 0; i < count; i++) {
-                byte type = _r.Read();
+                byte type = _r.ReadByte();
                 switch (type) {
                     case 1:
                         _r.Skip(10);
@@ -195,7 +189,7 @@ namespace reWZ {
                         int x = _r.ReadInt32();
                         type = _r.PeekFor(() => {
                             _r.Seek(x + _fstart);
-                            return _r.Read();
+                            return _r.ReadByte();
                         });
                         break;
                     case 3:
@@ -223,17 +217,15 @@ namespace reWZ {
         private bool GuessVersionWithImageOffsetAt(short ver, long offset) {
             bool success = false;
             for (ushort v = 0; v < ushort.MaxValue; v++) {
-                uint vHash = v.ToString(CultureInfo.InvariantCulture)
-                    .Aggregate<char, uint>(0, (current, t) => (32*current) + t + 1);
-                if ((0xFF ^ (vHash >> 24) ^ (vHash << 8 >> 24) ^ (vHash << 16 >> 24) ^ (vHash << 24 >> 24)) != ver)
+                uint vHash;
+                if (!VersionHash(v, ver, out vHash))
                     continue;
                 _r.Seek(offset);
                 _r.VersionHash = vHash;
                 try {
                     _r.Seek(_r.ReadWZOffset(_fstart));
-                    if (_r.ReadByte() != 0x73 ||
-                        (_r.PeekFor(() => _r.ReadWZString()) != "Property" &&
-                         _r.PeekFor(() => _r.ReadWZString(false)) != "Property"))
+                    if ((_r.PeekFor(() => _r.ReadWZStringBlock(true)) != "Property" &&
+                         _r.PeekFor(() => _r.ReadWZStringBlock(false)) != "Property"))
                         continue;
                     success = true;
                     break;
@@ -246,6 +238,17 @@ namespace reWZ {
 
         internal unsafe WZBinaryReader GetSubstream(long offset, long length) {
             return new WZBinaryReader(_bpo.Pointer + offset, length, _aes, _r.VersionHash);
+        }
+
+        internal static bool VersionHash(ushort v, short sV, out uint vHash) {
+            vHash = 0;
+            foreach (char c in v.ToString(CultureInfo.InvariantCulture))
+                vHash = (32 * vHash) + c + 1;
+            return (0xFF
+                    ^ ((vHash >> 24) & 0xFF)
+                    ^ ((vHash >> 16) & 0xFF)
+                    ^ ((vHash >> 8) & 0xFF)
+                    ^ ((vHash) & 0xFF)) == sV;
         }
 
         #region IDisposable Members
@@ -262,8 +265,6 @@ namespace reWZ {
             if (disposing)
                 _bpo.Dispose();
             MainDirectory = null;
-            _aes = null;
-            _r = null;
         }
 
         #endregion

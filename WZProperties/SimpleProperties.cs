@@ -76,7 +76,7 @@ namespace reWZ.WZProperties {
             : base(name, parent, ReadSingle(reader), container, false, WZObjectType.Single) {}
 
         private static float ReadSingle(WZBinaryReader reader) {
-            byte t = reader.Read();
+            byte t = reader.ReadByte();
             return t == 0x80
                 ? reader.ReadSingle()
                 : (t == 0 ? 0f : WZUtil.Die<float>("Unknown byte while reading WZSingleProperty."));
@@ -95,8 +95,8 @@ namespace reWZ.WZProperties {
     ///     A string property.
     /// </summary>
     public sealed class WZStringProperty : WZDelayedProperty<string> {
-        internal WZStringProperty(string name, WZObject parent, WZImage container)
-            : base(name, parent, container, false, WZObjectType.String) {}
+        internal WZStringProperty(string name, WZObject parent, WZBinaryReader reader, WZImage container)
+            : base(name, parent, container, reader, false, WZObjectType.String) {}
 
         internal override bool Parse(WZBinaryReader r, bool initial, out string result) {
             if (!initial || (File._flag & WZReadSelection.EagerParseStrings) == WZReadSelection.EagerParseStrings) {

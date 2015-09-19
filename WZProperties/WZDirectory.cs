@@ -43,17 +43,14 @@ namespace reWZ.WZProperties {
             wzbr.Seek(offset);
             int entryCount = wzbr.ReadWZInt();
             for (int i = 0; i < entryCount; ++i) {
-                byte type = wzbr.Read();
+                byte type = wzbr.ReadByte();
                 string name = null;
                 switch (type) {
-                    case 1:
-                        wzbr.Skip(10);
-                        continue;
                     case 2:
                         int x = wzbr.ReadInt32();
                         wzbr.PeekFor(() => {
                             wzbr.Seek(x + File._fstart);
-                            type = wzbr.Read();
+                            type = wzbr.ReadByte();
                             name = wzbr.ReadWZString(File._encrypted);
                         });
 
@@ -62,8 +59,11 @@ namespace reWZ.WZProperties {
                     case 4:
                         name = wzbr.ReadWZString(File._encrypted);
                         break;
+                    case 1:
+                        // wzbr.Skip(10);
+                        // continue;
                     default:
-                        WZUtil.Die("Unknown object type in WzDirectory.");
+                        WZUtil.Die($"Unknown object type {type} in WzDirectory.");
                         break;
                 }
                 if (name == null)
@@ -71,17 +71,15 @@ namespace reWZ.WZProperties {
                 int size = wzbr.ReadWZInt();
                 wzbr.ReadWZInt();
                 uint woffset = wzbr.ReadWZOffset(File._fstart);
-                wzbr.PeekFor(() => {
-                    switch (type) {
-                        case 3:
-                            Add(new WZDirectory(name, this, File, wzbr, woffset));
-                            break;
-                        case 4:
-                            Add(new WZImage(name, this, File,
-                                File.GetSubstream(woffset, size)));
-                            break;
-                    }
-                });
+                switch (type) {
+                    case 3:
+                        Add(new WZDirectory(name, this, File, wzbr.Clone(), woffset));
+                        break;
+                    case 4:
+                        Add(new WZImage(name, this, File,
+                            File.GetSubstream(woffset, size)));
+                        break;
+                }
             }
         }
     }

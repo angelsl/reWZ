@@ -43,7 +43,7 @@ namespace reWZ.WZProperties {
     public sealed class WZCanvasProperty : WZDelayedProperty<Bitmap>, IDisposable {
         private long _afterChildren;
         internal WZCanvasProperty(string name, WZObject parent, WZBinaryReader br, WZImage container)
-            : base(name, parent, container, true, WZObjectType.Canvas) {}
+            : base(name, parent, container, br, true, WZObjectType.Canvas) {}
 
         /// <summary>
         ///     Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.

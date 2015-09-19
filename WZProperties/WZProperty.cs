@@ -37,16 +37,18 @@ namespace reWZ.WZProperties {
     /// <typeparam name="T">The type that this property contains.</typeparam>
     public abstract class WZDelayedProperty<T> : WZProperty<T> {
         private readonly long _offset;
+        private readonly WZBinaryReader _r;
 
         /// <summary>
         ///     Whether the delayed property has been parsed.
         /// </summary>
-        internal bool _parsed;
+        protected bool _parsed;
 
-        internal WZDelayedProperty(string name, WZObject parent, WZImage container, bool children, WZObjectType type)
+        internal WZDelayedProperty(string name, WZObject parent, WZImage container, WZBinaryReader r, bool children, WZObjectType type)
             : base(name, parent, default(T), container, children, type) {
-            _offset = container._r.Position;
-            _parsed = Parse(container._r, true, out _value);
+            _offset = r.Position;
+            _parsed = Parse(r, true, out _value);
+            _r = r;
         }
 
         /// <summary>
@@ -63,7 +65,7 @@ namespace reWZ.WZProperties {
         internal void CheckParsed() {
             if (_parsed)
                 return;
-            WZBinaryReader r = Image._r.Clone();
+            WZBinaryReader r = _r.Clone();
             r.Seek(_offset);
             Parse(r, false, out _value);
         }
@@ -76,7 +78,7 @@ namespace reWZ.WZProperties {
     /// </summary>
     /// <typeparam name="T"> The type that this property contains. </typeparam>
     public abstract class WZProperty<T> : WZObject {
-        internal T _value;
+        protected T _value;
 
         internal WZProperty(string name, WZObject parent, T value, WZImage container, bool children, WZObjectType type)
             : base(name, parent, container.File, children, type) {
@@ -101,7 +103,7 @@ namespace reWZ.WZProperties {
             List<WZObject> ret = new List<WZObject>(num);
             for (int i = 0; i < num; ++i) {
                 string name = r.ReadWZStringBlock(encrypted);
-                byte type = r.Read();
+                byte type = r.ReadByte();
                 switch (type) {
                     case 0:
                         ret.Add(new WZNullProperty(name, parent, f));
@@ -124,11 +126,11 @@ namespace reWZ.WZProperties {
                         ret.Add(new WZDoubleProperty(name, parent, r, f));
                         break;
                     case 8:
-                        ret.Add(new WZStringProperty(name, parent, f));
+                        ret.Add(new WZStringProperty(name, parent, r, f));
                         break;
                     case 9:
                         uint blockLen = r.ReadUInt32();
-                        ret.Add(r.PeekFor(() => ParseExtendedProperty(name, r, parent, f, encrypted)));
+                        ret.Add(ParseExtendedProperty(name, r.Clone(), parent, f, encrypted));
                         r.Skip(blockLen);
                         break;
                     default:
@@ -154,7 +156,7 @@ namespace reWZ.WZProperties {
                 case "Shape2D#Convex2D":
                     return new WZConvexProperty(name, parent, r, f);
                 case "Sound_DX8":
-                    return new WZAudioProperty(name, parent, f);
+                    return new WZAudioProperty(name, parent, r, f);
                 case "UOL":
                     r.Skip(1);
                     return new WZUOLProperty(name, parent, r, f);

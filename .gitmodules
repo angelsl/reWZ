@@ -1,3 +1,3 @@
-[submodule "Utilitas"]
-	path = Utilitas
-	url = https://github.com/angelsl/misc-Utilitas.git
+[submodule "UsefulThings"]
+	path = UsefulThings
+	url = https://github.com/angelsl/misc-UsefulThings.cs.git

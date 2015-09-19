@@ -37,7 +37,7 @@ namespace reWZ.WZProperties {
     public sealed class WZImage : WZObject {
         internal bool _encrypted;
         private bool _parsed;
-        internal WZBinaryReader _r;
+        private readonly WZBinaryReader _r;
 
         internal WZImage(string name, WZObject parent, WZFile file, WZBinaryReader reader) : base(name, parent, file, true, WZObjectType.Image) {
             _r = reader;
@@ -88,18 +88,13 @@ namespace reWZ.WZProperties {
 
         private void Parse() {
             _r.Seek(0);
-            if (_r.ReadByte() != 0x73)
-                WZUtil.Die("WZImage with invalid header (not beginning with 0x73!)");
-            if ((int) File._variant == 2)
-                _encrypted = false;
-            else if (_r.PeekFor(() => _r.ReadWZString()) == "Property")
+            if (_r.PeekFor(() => _r.ReadWZStringBlock(true)) == "Property")
                 _encrypted = true;
-            else if (_r.PeekFor(() => _r.ReadWZString(false)) == "Property")
+            else if (_r.PeekFor(() => _r.ReadWZStringBlock(false)) == "Property")
                 _encrypted = false;
             else
-                WZUtil.Die("WZImage with invalid header (no Property string! check your WZVariant)");
-            if (_r.ReadWZString(_encrypted) != "Property")
                 WZUtil.Die("Failed to determine image encryption!");
+            _r.SkipWZStringBlock();
             if (_r.ReadUInt16() != 0)
                 WZUtil.Die("WZImage with invalid header (no zero UInt16!)");
             foreach (WZObject child in WZExtendedParser.ParsePropertyList(_r, this, this, _encrypted))

@@ -31,20 +31,22 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
+using System.Runtime.CompilerServices;
 using System.Text;
-using Utilitas;
+using UsefulThings;
 
 namespace reWZ {
     internal sealed class WZBinaryReader : PointerStream {
         private readonly WZAES _aes;
 
-        internal unsafe WZBinaryReader(byte* start, long size, WZAES aes, uint versionHash) : base(start, size, false) {
+        internal unsafe WZBinaryReader(byte* start, long size, WZAES aes, uint versionHash) : base(start, size) {
             _aes = aes;
             VersionHash = versionHash;
         }
 
         internal uint VersionHash { get; set; }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void Seek(long pos) {
             Position = pos;
         }
@@ -59,8 +61,8 @@ namespace reWZ {
         ///     Advances the position within the backing stream by <paramref name="count" /> .
         /// </summary>
         /// <param name="count"> The amount of bytes to skip. </param>
-        internal void Skip(long count) {
-            Position += count;
+        internal unsafe void Skip(long count) {
+            _cur += count;
         }
 
         /// <summary>
@@ -68,12 +70,12 @@ namespace reWZ {
         ///     original value.
         /// </summary>
         /// <param name="result"> The delegate to execute. </param>
-        internal void PeekFor(Action result) {
-            long orig = Position;
+        internal unsafe void PeekFor(Action result) {
+            byte* orig = _cur;
             try {
                 result();
             } finally {
-                Position = orig;
+                _cur = orig;
             }
         }
 
@@ -84,12 +86,12 @@ namespace reWZ {
         /// <typeparam name="T"> The return type of the delegate. </typeparam>
         /// <param name="result"> The delegate to execute. </param>
         /// <returns> The object returned by the delegate. </returns>
-        internal T PeekFor<T>(Func<T> result) {
-            long orig = Position;
+        internal unsafe T PeekFor<T>(Func<T> result) {
+            byte* orig = _cur;
             try {
                 return result();
             } finally {
-                Position = orig;
+                _cur = orig;
             }
         }
 
@@ -133,18 +135,6 @@ namespace reWZ {
         /// <param name="length"> The length of the string. </param>
         /// <returns> The read string. </returns>
         internal string ReadASCIIString(int length) => Encoding.ASCII.GetString(ReadBytes(length));
-
-        /// <summary>
-        ///     Reads a raw and unencrypted null-terminated ASCII string.
-        /// </summary>
-        /// <returns> The read string. </returns>
-        internal string ReadASCIIZString() {
-            StringBuilder sb = new StringBuilder();
-            byte b;
-            while ((b = Read()) != 0)
-                sb.Append((char) b);
-            return sb.ToString();
-        }
 
         internal string ReadWZStringBlock(bool encrypted) {
             switch (ReadByte()) {

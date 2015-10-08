@@ -322,12 +322,22 @@ namespace reWZ {
 
         internal static WZObject ResolvePath(WZObject start, string path) {
             try {
-                return
-                    (path.StartsWith("/") ? path.Substring(1) : path).Split('/')
-                        .Where(node => node != ".")
-                        .Aggregate(start,
-                            (current, node) =>
-                                node == ".." ? current.Parent : current[node]);
+                WZObject result = start;
+                string[] nodes = (path.StartsWith("/") ? path.Substring(1) : path).Split('/');
+                foreach (string node in nodes) {
+                    switch (node) {
+                        case ".":
+                            continue;
+                        case "..":
+                            result = result.Parent;
+                            continue;
+                    }
+                    WZUOLProperty uolNode = result as WZUOLProperty;
+                    if (uolNode != null)
+                        result = uolNode.FinalTarget;
+                    result = result[node];
+                }
+                return result;
             } catch (KeyNotFoundException) {
                 return null;
             }

@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using UsefulThings;
 
 namespace reWZ.WZProperties {
     /// <summary>
@@ -84,6 +85,12 @@ namespace reWZ.WZProperties {
             if (!_parsed)
                 Parse();
             return base.HasChild(name);
+        }
+
+        public unsafe byte[] DumpBytes() {
+            byte[] ret = new byte[_r.Length];
+            ByteMarshal.CopyTo(_r.Pointer - _r.Position, ret, 0, _r.Length);
+            return ret;
         }
 
         private void Parse() {

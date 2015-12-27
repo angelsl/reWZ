@@ -27,12 +27,8 @@
 // the terms and conditions of the license of that module. An independent
 // module is a module which is not derived from or based on reWZ.
 
-using System.IO;
-
 namespace reWZ.WZProperties {
-    /// <summary>
-    ///     A directory in a WZ file. This cannot be located inside an Image file.
-    /// </summary>
+    /// <summary>A directory in a WZ file. This cannot be located inside an Image file.</summary>
     public sealed class WZDirectory : WZObject {
         internal WZDirectory(string name, WZObject parent, WZFile file, WZBinaryReader wzbr, long offset)
             : base(name, parent, file, true, WZObjectType.Directory) {
@@ -60,14 +56,15 @@ namespace reWZ.WZProperties {
                         name = wzbr.ReadWZString(File._encrypted);
                         break;
                     case 1:
-                        // wzbr.Skip(10);
-                        // continue;
+                    // wzbr.Skip(10);
+                    // continue;
                     default:
                         WZUtil.Die($"Unknown object type {type} in WzDirectory.");
                         break;
                 }
-                if (name == null)
+                if (name == null) {
                     WZUtil.Die("Failed to read WZDirectory entry name.");
+                }
                 int size = wzbr.ReadWZInt();
                 wzbr.ReadWZInt();
                 uint woffset = wzbr.ReadWZOffset(File._fstart);

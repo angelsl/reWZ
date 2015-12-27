@@ -54,19 +54,20 @@ namespace reWZ {
 
     internal static class UnDXT {
         //! Use DXT1 compression.
-        internal const int kDxt1 = (1 << 0);
+        internal const int kDxt1 = 1 << 0;
         //! Use DXT3 compression.
-        internal const int kDxt3 = (1 << 1);
+        internal const int kDxt3 = 1 << 1;
         //! Use DXT5 compression.
-        internal const int kDxt5 = (1 << 2);
+        internal const int kDxt5 = 1 << 2;
 
         private static int FixFlags(int flags) {
             // grab the flag bits
             int method = flags & (kDxt1 | kDxt3 | kDxt5);
 
             // set defaults
-            if (method != kDxt3 && method != kDxt5)
+            if (method != kDxt3 && method != kDxt5) {
                 method = kDxt1;
+            }
 
             // done
             return method;
@@ -78,7 +79,7 @@ namespace reWZ {
 
             // initialise the block input
             byte* sourceBlock = (byte*) blocks;
-            int bytesPerBlock = ((flags & kDxt1) != 0) ? 8 : 16;
+            int bytesPerBlock = (flags & kDxt1) != 0 ? 8 : 16;
 
             // loop over blocks
             for (int y = 0; y < height; y += 4) {
@@ -99,10 +100,13 @@ namespace reWZ {
                                     byte* targetPixel = rgba + 4*(width*sy + sx);
 
                                     // copy the rgba value
-                                    for (int i = 0; i < 4; ++i)
+                                    for (int i = 0; i < 4; ++i) {
                                         *targetPixel++ = *sourcePixel++;
+                                    }
                                 } else // skip this pixel as its outside the image
+                                {
                                     sourcePixel += 4;
+                                }
                             }
                         }
                     }
@@ -119,17 +123,19 @@ namespace reWZ {
             // get the block locations
             void* colourBlock = block;
             void* alphaBock = block;
-            if ((flags & (kDxt3 | kDxt5)) != 0)
+            if ((flags & (kDxt3 | kDxt5)) != 0) {
                 colourBlock = (byte*) block + 8;
+            }
 
             // decompress colour
             DecompressColour(rgba, colourBlock, (flags & kDxt1) != 0);
 
             // decompress alpha separately if necessary
-            if ((flags & kDxt3) != 0)
+            if ((flags & kDxt3) != 0) {
                 DecompressAlphaDxt3(rgba, alphaBock);
-            else if ((flags & kDxt5) != 0)
+            } else if ((flags & kDxt5) != 0) {
                 DecompressAlphaDxt5(rgba, alphaBock);
+            }
         }
 
         private static unsafe int Unpack565(byte* packed, byte* colour) {
@@ -153,7 +159,7 @@ namespace reWZ {
 
         private static unsafe void DecompressColour(byte* rgba, void* block, bool isDxt1) {
             // get the block bytes
-            byte* bytes = (byte*) (block);
+            byte* bytes = (byte*) block;
 
             // unpack the endpoints
             byte[] codesA = new byte[16];
@@ -180,7 +186,7 @@ namespace reWZ {
 
                     // fill in alpha for the intermediate values
                     codes[8 + 3] = 255;
-                    codes[12 + 3] = (byte) ((isDxt1 && a <= b) ? 0 : 255);
+                    codes[12 + 3] = (byte) (isDxt1 && a <= b ? 0 : 255);
 
                     // unpack the indices
                     for (int i = 0; i < 4; ++i) {
@@ -196,8 +202,9 @@ namespace reWZ {
                     // store out the colours
                     for (int i = 0; i < 16; ++i) {
                         byte offset = (byte) (4*indices[i]);
-                        for (int j = 0; j < 3; ++j)
+                        for (int j = 0; j < 3; ++j) {
                             rgba[4*i + 2 - j] = codes[offset + j];
+                        }
                         rgba[4*i + 3] = codes[offset + 3];
                     }
                 }
@@ -205,7 +212,7 @@ namespace reWZ {
         }
 
         private static unsafe void DecompressAlphaDxt3(byte* rgba, void* block) {
-            byte* bytes = (byte*) (block);
+            byte* bytes = (byte*) block;
 
             // unpack the alpha values pairwise
             for (int i = 0; i < 8; ++i) {
@@ -224,7 +231,7 @@ namespace reWZ {
 
         private static unsafe void DecompressAlphaDxt5(byte* rgba, void* block) {
             // get the two alpha values
-            byte* bytes = (byte*) (block);
+            byte* bytes = (byte*) block;
             int alpha0 = bytes[0];
             int alpha1 = bytes[1];
 
@@ -234,14 +241,16 @@ namespace reWZ {
             codes[1] = (byte) alpha1;
             if (alpha0 <= alpha1) {
                 // use 5-alpha codebook
-                for (int i = 1; i < 5; ++i)
+                for (int i = 1; i < 5; ++i) {
                     codes[1 + i] = (byte) (((5 - i)*alpha0 + i*alpha1)/5);
+                }
                 codes[6] = 0;
                 codes[7] = 255;
             } else {
                 // use 7-alpha codebook
-                for (int i = 1; i < 7; ++i)
+                for (int i = 1; i < 7; ++i) {
                     codes[1 + i] = (byte) (((7 - i)*alpha0 + i*alpha1)/7);
+                }
             }
 
             // decode the indices
@@ -254,7 +263,7 @@ namespace reWZ {
                     int value = 0;
                     for (int j = 0; j < 3; ++j) {
                         int @byte = *src++;
-                        value |= (@byte << 8*j);
+                        value |= @byte << 8*j;
                     }
 
                     // unpack 8 3-bit values from it
@@ -265,8 +274,9 @@ namespace reWZ {
                 }
             }
             // write out the indexed codebook values
-            for (int i = 0; i < 16; ++i)
+            for (int i = 0; i < 16; ++i) {
                 rgba[4*i + 3] = codes[indices[i]];
+            }
         }
     }
 }

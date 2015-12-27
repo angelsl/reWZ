@@ -28,7 +28,6 @@
 // module is a module which is not derived from or based on reWZ.
 
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Runtime.CompilerServices;
@@ -57,18 +56,14 @@ namespace reWZ {
             return ret;
         }
 
-        /// <summary>
-        ///     Advances the position within the backing stream by <paramref name="count" /> .
-        /// </summary>
+        /// <summary>Advances the position within the backing stream by <paramref name="count" /> .</summary>
         /// <param name="count"> The amount of bytes to skip. </param>
         internal unsafe void Skip(long count) {
             _cur += count;
         }
 
-        /// <summary>
-        ///     Executes a delegate of type <see cref="System.Action" /> , then sets the position of the backing stream back to the
-        ///     original value.
-        /// </summary>
+        /// <summary>Executes a delegate of type <see cref="System.Action" /> , then sets the position of the backing stream back
+        ///     to the original value.</summary>
         /// <param name="result"> The delegate to execute. </param>
         internal unsafe void PeekFor(Action result) {
             byte* orig = _cur;
@@ -79,10 +74,8 @@ namespace reWZ {
             }
         }
 
-        /// <summary>
-        ///     Executes a delegate of type <see cref="System.Func{TResult}" /> , then sets the position of the backing stream back
-        ///     to the original value.
-        /// </summary>
+        /// <summary>Executes a delegate of type <see cref="System.Func{TResult}" /> , then sets the position of the backing stream
+        ///     back to the original value.</summary>
         /// <typeparam name="T"> The return type of the delegate. </typeparam>
         /// <param name="result"> The delegate to execute. </param>
         /// <returns> The object returned by the delegate. </returns>
@@ -95,19 +88,19 @@ namespace reWZ {
             }
         }
 
-        /// <summary>
-        ///     Reads a string encoded in WZ format.
-        /// </summary>
+        /// <summary>Reads a string encoded in WZ format.</summary>
         /// <param name="encrypted"> Whether the string is encrypted. </param>
         /// <returns> The read string. </returns>
         internal string ReadWZString(bool encrypted = true) {
             int length = ReadSByte();
-            if (length == 0)
+            if (length == 0) {
                 return "";
+            }
             if (length > 0) {
                 length = length == 127 ? ReadInt32() : length;
-                if (length == 0)
+                if (length == 0) {
                     return "";
+                }
                 byte[] rbytes = ReadBytes(length*2);
                 return _aes.DecryptUnicodeString(rbytes, encrypted);
             } // !(length >= 0), i think we can assume length < 0, but the compiler can't seem to see that
@@ -115,10 +108,8 @@ namespace reWZ {
             return length == 0 ? "" : _aes.DecryptASCIIString(ReadBytes(length), encrypted);
         }
 
-        /// <summary>
-        ///     Reads a string encoded in WZ format at a specific offset, then returns the backing stream's position to its
-        ///     original value.
-        /// </summary>
+        /// <summary>Reads a string encoded in WZ format at a specific offset, then returns the backing stream's position to its
+        ///     original value.</summary>
         /// <param name="offset"> The offset where the string is located. </param>
         /// <param name="encrypted"> Whether the string is encrypted. </param>
         /// <returns> The read string. </returns>
@@ -129,9 +120,7 @@ namespace reWZ {
             });
         }
 
-        /// <summary>
-        ///     Reads a raw and unencrypted ASCII string.
-        /// </summary>
+        /// <summary>Reads a raw and unencrypted ASCII string.</summary>
         /// <param name="length"> The length of the string. </param>
         /// <returns> The read string. </returns>
         internal string ReadASCIIString(int length) => Encoding.ASCII.GetString(ReadBytes(length));
@@ -167,21 +156,17 @@ namespace reWZ {
 
         internal void SkipWZString() {
             int length = ReadSByte();
-            Skip((length >= 0) ? (length == 127 ? ReadInt32() : length)*2 : length == -128 ? ReadInt32() : -length);
+            Skip(length >= 0 ? (length == 127 ? ReadInt32() : length)*2 : length == -128 ? ReadInt32() : -length);
         }
 
-        /// <summary>
-        ///     Reads a WZ-compressed 32-bit integer.
-        /// </summary>
+        /// <summary>Reads a WZ-compressed 32-bit integer.</summary>
         /// <returns> The read integer. </returns>
         internal int ReadWZInt() {
             sbyte s = ReadSByte();
             return s == -128 ? ReadInt32() : s;
         }
 
-        /// <summary>
-        ///     Reads a WZ-compressed 64-bit integer.
-        /// </summary>
+        /// <summary>Reads a WZ-compressed 64-bit integer.</summary>
         /// <returns> The read integer. </returns>
         internal long ReadWZLong() {
             sbyte s = ReadSByte();
@@ -190,16 +175,17 @@ namespace reWZ {
 
         internal uint ReadWZOffset(uint fstart) {
             unchecked {
-                uint ret = ((((uint) Position - fstart) ^ 0xFFFFFFFF)*VersionHash) - WZAES.OffsetKey;
-                return (((ret << (int) ret) | (ret >> (int) (32 - ret))) ^ ReadUInt32()) + (fstart*2);
+                uint ret = (((uint) Position - fstart) ^ 0xFFFFFFFF)*VersionHash - WZAES.OffsetKey;
+                return (((ret << (int) ret) | (ret >> (int) (32 - ret))) ^ ReadUInt32()) + fstart*2;
             }
         }
 
         internal Guid[] ReadGuidArray() {
             int length = ReadByte();
             Guid[] ret = new Guid[length];
-            for (int i = 0; i < length; ++i)
+            for (int i = 0; i < length; ++i) {
                 ret[i] = new Guid(ReadBytes(16));
+            }
             return ret;
         }
 
@@ -209,12 +195,14 @@ namespace reWZ {
                 length = Math.Max(@in.Length, length);
             } catch {}
             byte[] dec = new byte[length];
-            using (DeflateStream dStr = new DeflateStream(@in, CompressionMode.Decompress))
-            using (MemoryStream @out = new MemoryStream(dec.Length*2)) {
-                int len;
-                while ((len = dStr.Read(dec, 0, dec.Length)) > 0)
-                    @out.Write(dec, 0, len);
-                return @out.ToArray();
+            using (DeflateStream dStr = new DeflateStream(@in, CompressionMode.Decompress)) {
+                using (MemoryStream @out = new MemoryStream(dec.Length*2)) {
+                    int len;
+                    while ((len = dStr.Read(dec, 0, dec.Length)) > 0) {
+                        @out.Write(dec, 0, len);
+                    }
+                    return @out.ToArray();
+                }
             }
         }
     }

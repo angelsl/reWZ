@@ -94,12 +94,16 @@ namespace reWZ {
         }
 
         private static byte[] GenerateKey(byte[] iv, byte[] aesKey) {
-            using (MemoryStream memStream = new MemoryStream(0x10000))
-            using (AesManaged aem = new AesManaged {KeySize = 256, Key = aesKey, Mode = CipherMode.CBC, IV = iv})
-            using (CryptoStream cStream = new CryptoStream(memStream, aem.CreateEncryptor(), CryptoStreamMode.Write)) {
-                cStream.Write(new byte[0x10000], 0, 0x10000);
-                cStream.Flush();
-                return memStream.ToArray();
+            using (MemoryStream memStream = new MemoryStream(0x10000)) {
+                using (AesManaged aem = new AesManaged {KeySize = 256, Key = aesKey, Mode = CipherMode.CBC, IV = iv}) {
+                    using (
+                        CryptoStream cStream = new CryptoStream(memStream, aem.CreateEncryptor(), CryptoStreamMode.Write)
+                        ) {
+                        cStream.Write(new byte[0x10000], 0, 0x10000);
+                        cStream.Flush();
+                        return memStream.ToArray();
+                    }
+                }
             }
         }
 
@@ -115,81 +119,57 @@ namespace reWZ {
             return DecryptData(bytes, _wzKey);
         }
 
-        private unsafe static byte[] DecryptData(byte[] data, byte[] key) {
+        private static unsafe byte[] DecryptData(byte[] data, byte[] key) {
             // TODO: generate more bytes on demand
             if (data.Length > key.Length) {
                 throw new NotSupportedException(
                     $"Cannot decrypt data longer than {key.Length} characters. Please report this!");
             }
 
-            fixed (byte* c = data, k = key)
-            {
+            fixed (byte* c = data, k = key) {
                 byte* d = c, l = k, e = d + data.Length;
-                while (d < e)
-                    *(d++) ^= *(l++);
+                while (d < e) {
+                    *d++ ^= *l++;
+                }
             }
 
             return data;
         }
     }
 
-    /// <summary>
-    ///     This enum is used to specify the WZ key to be used.
-    /// </summary>
+    /// <summary>This enum is used to specify the WZ key to be used.</summary>
     public enum WZVariant {
-        /// <summary>
-        ///     MapleStory SEA
-        /// </summary>
+        /// <summary>MapleStory SEA</summary>
         MSEA = 0,
 
-        /// <summary>
-        ///     Korea MapleStory
-        /// </summary>
+        /// <summary>Korea MapleStory</summary>
         KMS = 0,
 
-        /// <summary>
-        ///     Korea MapleStory (Tespia)
-        /// </summary>
+        /// <summary>Korea MapleStory (Tespia)</summary>
         KMST = 0,
 
-        /// <summary>
-        ///     Japan MapleStory
-        /// </summary>
+        /// <summary>Japan MapleStory</summary>
         JMS = 0,
 
-        /// <summary>
-        ///     Japan MapleStory (Tespia)
-        /// </summary>
+        /// <summary>Japan MapleStory (Tespia)</summary>
         JMST = 0,
 
-        /// <summary>
-        ///     Europe MapleStory
-        /// </summary>
+        /// <summary>Europe MapleStory</summary>
         EMS = 0,
 
-        /// <summary>
-        ///     Global MapleStory
-        /// </summary>
+        /// <summary>Global MapleStory</summary>
         GMS = 1,
 
-        /// <summary>
-        ///     Global MapleStory (Tespia)
-        /// </summary>
+        /// <summary>Global MapleStory (Tespia)</summary>
         GMST = 1,
 
-        /// <summary>
-        ///     Taiwan MapleStory
-        /// </summary>
+        /// <summary>Taiwan MapleStory</summary>
         TMS = 1,
 
-        /// <summary>
-        ///     Brazil MapleStory
-        /// </summary>
+        /// <summary>Brazil MapleStory</summary>
         BMS = 2,
 
-        /// <summary>
-        ///     Classic MapleStory (Data.wz)
-        /// </summary>
+        /// <summary>Classic MapleStory (Data.wz)</summary>
         Classic = 2
     }
 }

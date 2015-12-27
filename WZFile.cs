@@ -30,27 +30,21 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
-using System.Linq;
 using reWZ.WZProperties;
 using UsefulThings;
 
 namespace reWZ {
-    /// <summary>
-    ///     A WZ file.
-    /// </summary>
+    /// <summary>A WZ file.</summary>
     public sealed class WZFile : IDisposable {
+        internal readonly WZAES _aes;
+        private readonly IBytePointerObject _bpo;
         internal readonly bool _encrypted;
         internal readonly WZReadSelection _flag;
-        internal readonly WZVariant _variant;
-        internal readonly WZAES _aes;
-        internal uint _fstart;
         private readonly WZBinaryReader _r;
-        private readonly IBytePointerObject _bpo;
+        internal readonly WZVariant _variant;
+        internal uint _fstart;
 
-        /// <summary>
-        ///     Creates and loads a WZ file from a path. The Stream created will be disposed when the WZ file is disposed.
-        /// </summary>
+        /// <summary>Creates and loads a WZ file from a path. The Stream created will be disposed when the WZ file is disposed.</summary>
         /// <param name="path"> The path where the WZ file is located. </param>
         /// <param name="variant"> The variant of this WZ file. </param>
         /// <param name="encrypted"> Whether the WZ file is encrypted outside a WZ image. </param>
@@ -65,21 +59,15 @@ namespace reWZ {
             Parse();
         }
 
-        /// <summary>
-        ///     The root directory of the WZ file.
-        /// </summary>
+        /// <summary>The root directory of the WZ file.</summary>
         public WZDirectory MainDirectory { get; private set; }
 
-        /// <summary>
-        ///     Disposer.
-        /// </summary>
+        /// <summary>Disposer.</summary>
         ~WZFile() {
             Dispose(false);
         }
 
-        /// <summary>
-        ///     Resolves a path in the form "/a/b/c/.././d/e/f/".
-        /// </summary>
+        /// <summary>Resolves a path in the form "/a/b/c/.././d/e/f/".</summary>
         /// <param name="path"> The path to resolve. </param>
         /// <exception cref="System.Collections.Generic.KeyNotFoundException">The path has an invalid node.</exception>
         public WZObject ResolvePath(string path) {
@@ -88,8 +76,9 @@ namespace reWZ {
 
         private void Parse() {
             _r.Seek(0);
-            if (_r.ReadInt32() != 0x31474B50)
+            if (_r.ReadInt32() != 0x31474B50) {
                 WZUtil.Die("WZ file has invalid header; file does not have magic \"PKG1\".");
+            }
             _r.Skip(8);
             _fstart = _r.ReadUInt32();
             GuessVersion();
@@ -107,15 +96,18 @@ namespace reWZ {
 
             for (ushort v = 0; v < ushort.MaxValue; v++) {
                 uint vHash;
-                if (!VersionHash(v, ver, out vHash))
+                if (!VersionHash(v, ver, out vHash)) {
                     continue;
+                }
                 _r.VersionHash = vHash;
-                if (DepthFirstImageSearch(out offset))
+                if (DepthFirstImageSearch(out offset)) {
                     break;
+                }
             }
 
-            if (!GuessVersionWithImageOffsetAt(ver, offset))
+            if (!GuessVersionWithImageOffsetAt(ver, offset)) {
                 WZUtil.Die("Unable to guess WZ version.");
+            }
         }
 
         private bool DepthFirstImageSearch(out long offset) {
@@ -170,8 +162,9 @@ namespace reWZ {
 
         private long TryFindImageInDir(out bool success) {
             int count = _r.ReadWZInt();
-            if (count == 0)
+            if (count == 0) {
                 WZUtil.Die("WZ file has no entries!");
+            }
             long offset = 0;
             offset = TryFindImageOffset(count, offset, out success);
             return offset;
@@ -205,8 +198,9 @@ namespace reWZ {
                 _r.ReadWZInt();
                 offset = _r.Position;
                 _r.Skip(4);
-                if (type != 4)
+                if (type != 4) {
                     continue;
+                }
 
                 success = true;
                 break;
@@ -218,15 +212,17 @@ namespace reWZ {
             bool success = false;
             for (ushort v = 0; v < ushort.MaxValue; v++) {
                 uint vHash;
-                if (!VersionHash(v, ver, out vHash))
+                if (!VersionHash(v, ver, out vHash)) {
                     continue;
+                }
                 _r.Seek(offset);
                 _r.VersionHash = vHash;
                 try {
                     _r.Seek(_r.ReadWZOffset(_fstart));
-                    if ((_r.PeekFor(() => _r.ReadWZStringBlock(true)) != "Property" &&
-                         _r.PeekFor(() => _r.ReadWZStringBlock(false)) != "Property"))
+                    if (_r.PeekFor(() => _r.ReadWZStringBlock(true)) != "Property" &&
+                        _r.PeekFor(() => _r.ReadWZStringBlock(false)) != "Property") {
                         continue;
+                    }
                     success = true;
                     break;
                 } catch {
@@ -242,73 +238,57 @@ namespace reWZ {
 
         internal static bool VersionHash(ushort v, short sV, out uint vHash) {
             vHash = 0;
-            foreach (char c in v.ToString(CultureInfo.InvariantCulture))
-                vHash = (32 * vHash) + c + 1;
+            foreach (char c in v.ToString(CultureInfo.InvariantCulture)) {
+                vHash = 32*vHash + c + 1;
+            }
             return (0xFF
                     ^ ((vHash >> 24) & 0xFF)
                     ^ ((vHash >> 16) & 0xFF)
                     ^ ((vHash >> 8) & 0xFF)
-                    ^ ((vHash) & 0xFF)) == sV;
+                    ^ (vHash & 0xFF)) == sV;
         }
 
         #region IDisposable Members
 
-        /// <summary>
-        ///     Disposes this WZ file.
-        /// </summary>
+        /// <summary>Disposes this WZ file.</summary>
         public void Dispose() {
             GC.SuppressFinalize(this);
             Dispose(true);
         }
 
         private void Dispose(bool disposing) {
-            if (disposing)
+            if (disposing) {
                 _bpo.Dispose();
+            }
             MainDirectory = null;
         }
 
         #endregion
     }
 
-    /// <summary>
-    ///     WZ reading flags.
-    /// </summary>
+    /// <summary>WZ reading flags.</summary>
     [Flags]
     public enum WZReadSelection : byte {
-        /// <summary>
-        ///     No flags are enabled, that is, lazy loading of properties and WZ images is enabled.
-        /// </summary>
+        /// <summary>No flags are enabled, that is, lazy loading of properties and WZ images is enabled.</summary>
         None = 0,
 
-        /// <summary>
-        ///     Set this flag to disable lazy loading of string properties.
-        /// </summary>
+        /// <summary>Set this flag to disable lazy loading of string properties.</summary>
         EagerParseStrings = 1,
 
-        /// <summary>
-        ///     Set this flag to disable lazy loading of Audio properties.
-        /// </summary>
+        /// <summary>Set this flag to disable lazy loading of Audio properties.</summary>
         EagerParseAudio = 2,
 
-        /// <summary>
-        ///     Set this flag to disable lazy loading of canvas properties.
-        /// </summary>
+        /// <summary>Set this flag to disable lazy loading of canvas properties.</summary>
         EagerParseCanvas = 4,
 
-        /// <summary>
-        ///     Set this flag to completely disable loading of canvas properties.
-        /// </summary>
+        /// <summary>Set this flag to completely disable loading of canvas properties.</summary>
         NeverParseCanvas = 8,
 
-        /// <summary>
-        ///     Set this flag to disable lazy loading of string, Audio and canvas properties.
-        /// </summary>
+        /// <summary>Set this flag to disable lazy loading of string, Audio and canvas properties.</summary>
         EagerParseAll = EagerParseCanvas | EagerParseAudio | EagerParseStrings,
 
-        /// <summary>
-        ///     Set this flag to disable lazy loading of WZ images.
-        /// </summary>
-        EagerParseImage = 16,
+        /// <summary>Set this flag to disable lazy loading of WZ images.</summary>
+        EagerParseImage = 16
     }
 
     internal static class WZUtil {
@@ -333,8 +313,9 @@ namespace reWZ {
                             continue;
                     }
                     WZUOLProperty uolNode = result as WZUOLProperty;
-                    if (uolNode != null)
+                    if (uolNode != null) {
                         result = uolNode.FinalTarget;
+                    }
                     result = result[node];
                 }
                 return result;

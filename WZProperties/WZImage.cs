@@ -27,63 +27,60 @@
 // the terms and conditions of the license of that module. An independent
 // module is a module which is not derived from or based on reWZ.
 
-using System;
 using System.Collections.Generic;
 using UsefulThings;
 
 namespace reWZ.WZProperties {
-    /// <summary>
-    ///     A WZ image in a WZ file.
-    /// </summary>
+    /// <summary>A WZ image in a WZ file.</summary>
     public sealed class WZImage : WZObject {
+        private readonly WZBinaryReader _r;
         internal bool _encrypted;
         private bool _parsed;
-        private readonly WZBinaryReader _r;
 
-        internal WZImage(string name, WZObject parent, WZFile file, WZBinaryReader reader) : base(name, parent, file, true, WZObjectType.Image) {
+        internal WZImage(string name, WZObject parent, WZFile file, WZBinaryReader reader)
+            : base(name, parent, file, true, WZObjectType.Image) {
             _r = reader;
-            if ((file._flag & WZReadSelection.EagerParseImage) == WZReadSelection.EagerParseImage)
+            if ((file._flag & WZReadSelection.EagerParseImage) == WZReadSelection.EagerParseImage) {
                 Parse();
+            }
         }
 
-        /// <summary>
-        ///     Returns the child with the name <paramref name="childName" /> .
-        /// </summary>
+        /// <summary>Returns the child with the name <paramref name="childName" /> .</summary>
         /// <param name="childName"> The name of the child to return. </param>
         /// <returns> The retrieved child. </returns>
         public override WZObject this[string childName] {
             get {
-                if (!_parsed)
+                if (!_parsed) {
                     Parse();
+                }
                 return base[childName];
             }
         }
 
-        /// <summary>
-        ///     Returns the number of children this property contains.
-        /// </summary>
+        /// <summary>Returns the number of children this property contains.</summary>
         public override int ChildCount {
             get {
-                if (!_parsed)
+                if (!_parsed) {
                     Parse();
+                }
                 return base.ChildCount;
             }
         }
 
         public override IEnumerator<WZObject> GetEnumerator() {
-            if (!_parsed)
+            if (!_parsed) {
                 Parse();
+            }
             return base.GetEnumerator();
         }
 
-        /// <summary>
-        ///     Checks if this property has a child with name <paramref name="name" /> .
-        /// </summary>
+        /// <summary>Checks if this property has a child with name <paramref name="name" /> .</summary>
         /// <param name="name"> The name of the child to locate. </param>
         /// <returns> true if this property has such a child, false otherwise or if this property cannot contain children. </returns>
         public override bool HasChild(string name) {
-            if (!_parsed)
+            if (!_parsed) {
                 Parse();
+            }
             return base.HasChild(name);
         }
 
@@ -95,17 +92,20 @@ namespace reWZ.WZProperties {
 
         private void Parse() {
             _r.Seek(0);
-            if (_r.PeekFor(() => _r.ReadWZStringBlock(true)) == "Property")
+            if (_r.PeekFor(() => _r.ReadWZStringBlock(true)) == "Property") {
                 _encrypted = true;
-            else if (_r.PeekFor(() => _r.ReadWZStringBlock(false)) == "Property")
+            } else if (_r.PeekFor(() => _r.ReadWZStringBlock(false)) == "Property") {
                 _encrypted = false;
-            else
+            } else {
                 WZUtil.Die("Failed to determine image encryption!");
+            }
             _r.SkipWZStringBlock();
-            if (_r.ReadUInt16() != 0)
+            if (_r.ReadUInt16() != 0) {
                 WZUtil.Die("WZImage with invalid header (no zero UInt16!)");
-            foreach (WZObject child in WZExtendedParser.ParsePropertyList(_r, this, this, _encrypted))
+            }
+            foreach (WZObject child in WZExtendedParser.ParsePropertyList(_r, this, this, _encrypted)) {
                 Add(child);
+            }
             _parsed = true;
         }
     }

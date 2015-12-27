@@ -30,20 +30,17 @@
 using System.Globalization;
 
 namespace reWZ.WZProperties {
-    /// <summary>
-    ///     A directory in a WZ image. This cannot be located outside an image.
-    /// </summary>
+    /// <summary>A directory in a WZ image. This cannot be located outside an image.</summary>
     public sealed class WZSubProperty : WZProperty<WZNothing> {
         internal WZSubProperty(string name, WZObject parent, WZBinaryReader r, WZImage container)
             : base(name, parent, default(WZNothing), container, true, WZObjectType.SubProperty) {
-            foreach (WZObject c in WZExtendedParser.ParsePropertyList(r, this, Image, Image._encrypted))
+            foreach (WZObject c in WZExtendedParser.ParsePropertyList(r, this, Image, Image._encrypted)) {
                 Add(c);
+            }
         }
     }
 
-    /// <summary>
-    ///     A "Convex" property, containing multiple nameless WZ properties.
-    /// </summary>
+    /// <summary>A "Convex" property, containing multiple nameless WZ properties.</summary>
     public sealed class WZConvexProperty : WZProperty<WZNothing> {
         internal WZConvexProperty(string name, WZObject parent, WZBinaryReader r, WZImage container)
             : base(name, parent, default(WZNothing), container, true, WZObjectType.Convex) {

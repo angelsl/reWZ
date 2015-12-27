@@ -30,41 +30,38 @@
 using System.Collections.Generic;
 
 namespace reWZ.WZProperties {
-    /// <summary>
-    ///     Ab abstract class representing a WZ property that contains a value of type <typeparamref name="T" /> and is
-    ///     lazy-loaded.
-    /// </summary>
+    /// <summary>Ab abstract class representing a WZ property that contains a value of type <typeparamref name="T" /> and is
+    ///     lazy-loaded.</summary>
     /// <typeparam name="T">The type that this property contains.</typeparam>
     public abstract class WZDelayedProperty<T> : WZProperty<T> {
         private readonly long _offset;
         private readonly WZBinaryReader _r;
 
-        /// <summary>
-        ///     Whether the delayed property has been parsed.
-        /// </summary>
+        /// <summary>Whether the delayed property has been parsed.</summary>
         protected bool _parsed;
 
-        internal WZDelayedProperty(string name, WZObject parent, WZImage container, WZBinaryReader r, bool children, WZObjectType type)
+        internal WZDelayedProperty(string name, WZObject parent, WZImage container, WZBinaryReader r, bool children,
+            WZObjectType type)
             : base(name, parent, default(T), container, children, type) {
             _offset = r.Position;
             _parsed = Parse(r, true, out _value);
             _r = r;
         }
 
-        /// <summary>
-        ///     The value held by this WZ property.
-        /// </summary>
+        /// <summary>The value held by this WZ property.</summary>
         public override T Value {
             get {
-                if (!_parsed)
+                if (!_parsed) {
                     CheckParsed();
+                }
                 return _value;
             }
         }
 
         internal void CheckParsed() {
-            if (_parsed)
+            if (_parsed) {
                 return;
+            }
             WZBinaryReader r = _r.Clone();
             r.Seek(_offset);
             Parse(r, false, out _value);
@@ -73,9 +70,7 @@ namespace reWZ.WZProperties {
         internal abstract bool Parse(WZBinaryReader r, bool initial, out T result);
     }
 
-    /// <summary>
-    ///     An abstract class representing a WZ property that contains a value of type <typeparamref name="T" /> .
-    /// </summary>
+    /// <summary>An abstract class representing a WZ property that contains a value of type <typeparamref name="T" /> .</summary>
     /// <typeparam name="T"> The type that this property contains. </typeparam>
     public abstract class WZProperty<T> : WZObject {
         protected T _value;
@@ -86,14 +81,10 @@ namespace reWZ.WZProperties {
             Image = container;
         }
 
-        /// <summary>
-        ///     The value held by this WZ property.
-        /// </summary>
+        /// <summary>The value held by this WZ property.</summary>
         public virtual T Value => _value;
 
-        /// <summary>
-        ///     The image that this property resides in.
-        /// </summary>
+        /// <summary>The image that this property resides in.</summary>
         public WZImage Image { get; }
     }
 

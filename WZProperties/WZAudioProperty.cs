@@ -31,40 +31,34 @@ using System;
 using System.Diagnostics;
 
 namespace reWZ.WZProperties {
-    /// <summary>
-    ///     A sound property.
-    /// </summary>
+    /// <summary>A sound property.</summary>
     public sealed class WZAudioProperty : WZDelayedProperty<byte[]>, IDisposable {
+        private static readonly Guid WaveFormatExGuid = new Guid("05589f81-c356-11ce-bf01-00aa0055595a");
+        private static readonly Guid NoHeaderGuid = new Guid("00000000-0000-0000-0000-000000000000");
         private byte[] _header;
 
         internal WZAudioProperty(string name, WZObject parent, WZBinaryReader reader, WZImage container)
             : base(name, parent, container, reader, false, WZObjectType.Audio) {}
 
-        /// <summary>
-        /// The WAVEFORMATEX header, if present.
-        /// </summary>
+        /// <summary>The WAVEFORMATEX header, if present.</summary>
         public byte[] Header {
             get {
-                if (!_parsed)
+                if (!_parsed) {
                     CheckParsed();
+                }
                 return _header;
             }
         }
 
         public int Duration { get; private set; }
 
-        /// <summary>
-        ///     Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-        /// </summary>
+        /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
         /// <filterpriority>2</filterpriority>
         public void Dispose() {
             _value = null;
             _header = null;
             _parsed = false;
         }
-
-        private static readonly Guid WaveFormatExGuid = new Guid("05589f81-c356-11ce-bf01-00aa0055595a");
-        private static readonly Guid NoHeaderGuid = new Guid("00000000-0000-0000-0000-000000000000");
 
         internal override bool Parse(WZBinaryReader r, bool initial, out byte[] result) {
             r.Skip(1);
@@ -78,8 +72,9 @@ namespace reWZ.WZProperties {
                     r.Skip(r.ReadWZInt());
                 } else {
                     _header = r.ReadBytes(r.ReadWZInt());
-                    if (_header.Length != 18 + GetCbSize(_header))
+                    if (_header.Length != 18 + GetCbSize(_header)) {
                         _header = null; // TODO FIXME figure out what those gibberish headers are
+                    }
                     // But in any case they don't affect our uses
 
                     //    File._aes.DecryptBytesAsciiKey(_header);

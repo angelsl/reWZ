@@ -28,6 +28,7 @@
 // module is a module which is not derived from or based on reWZ.
 
 using System;
+using System.Diagnostics;
 
 namespace reWZ.WZProperties {
     /// <summary>
@@ -39,6 +40,9 @@ namespace reWZ.WZProperties {
         internal WZAudioProperty(string name, WZObject parent, WZBinaryReader reader, WZImage container)
             : base(name, parent, container, reader, false, WZObjectType.Audio) {}
 
+        /// <summary>
+        /// The WAVEFORMATEX header, if present.
+        /// </summary>
         public byte[] Header {
             get {
                 if (!_parsed)
@@ -59,26 +63,38 @@ namespace reWZ.WZProperties {
             _parsed = false;
         }
 
+        private static readonly Guid WaveFormatExGuid = new Guid("05589f81-c356-11ce-bf01-00aa0055595a");
+        private static readonly Guid NoHeaderGuid = new Guid("00000000-0000-0000-0000-000000000000");
+
         internal override bool Parse(WZBinaryReader r, bool initial, out byte[] result) {
             r.Skip(1);
             int blockLen = r.ReadWZInt(); // sound data length
             Duration = r.ReadWZInt(); // sound duration
-            r.Skip(16 * r.ReadByte());
-            r.Skip(16 * r.ReadByte());
-            r.Skip(16 * r.ReadByte());
+            r.Skip(1 + 16 + 16 + 2); // Byte, Major type GUID, Sub type GUID, byte, byte
+
+            Guid fmt = new Guid(r.ReadBytes(16));
+            if (fmt == WaveFormatExGuid) {
+                if (initial) {
+                    r.Skip(r.ReadWZInt());
+                } else {
+                    _header = r.ReadBytes(r.ReadWZInt());
+                    if (_header.Length != 18 + GetCbSize(_header))
+                        _header = null; // TODO FIXME figure out what those gibberish headers are
+                    // But in any case they don't affect our uses
+
+                    //    File._aes.DecryptBytesAsciiKey(_header);
+                    //if (_header.Length != 18 + GetCbSize(_header))
+                    //    Debug.WriteLine("Failed to parse WAVEFORMATEX header at node {0}", Path);
+                    //throw new WZException($"Failed to parse WAVEFORMATEX header at node {Path}");
+                }
+            } else if (fmt != NoHeaderGuid) {
+                Debug.WriteLine("New format guid {0} @ {1}", fmt, Path);
+            }
+
             if (!initial || (File._flag & WZReadSelection.EagerParseAudio) == WZReadSelection.EagerParseAudio) {
-                _header = r.ReadBytes(r.ReadWZInt());
-
-                if (_header.Length != 18 + GetCbSize(_header))
-                    File._aes.DecryptBytes(_header);
-
-                if (_header.Length != 18 + GetCbSize(_header))
-                    throw new WZException($"Failed to parse audio header at node {Path}");
-
                 result = r.ReadBytes(blockLen);
                 return true;
             } else {
-                r.Skip(r.ReadWZInt());
                 r.Skip(blockLen);
                 result = null;
                 return false;

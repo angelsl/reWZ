@@ -1,24 +1,24 @@
 // reWZ is copyright angelsl, 2011 to 2015 inclusive.
-// 
+//
 // This file (WZAES.cs) is part of reWZ.
-// 
+//
 // reWZ is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // reWZ is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with reWZ. If not, see <http://www.gnu.org/licenses/>.
-// 
+//
 // Linking reWZ statically or dynamically with other modules
 // is making a combined work based on reWZ. Thus, the terms and
 // conditions of the GNU General Public License cover the whole combination.
-// 
+//
 // As a special exception, the copyright holders of reWZ give you
 // permission to link reWZ with independent modules to produce an
 // executable, regardless of the license terms of these independent modules,
@@ -34,6 +34,66 @@ using System.Text;
 
 namespace reWZ {
     internal sealed class WZAES {
+        private byte[] _asciiEncKey;
+        private byte[] _asciiKey;
+        private byte[] _unicodeEncKey;
+        private byte[] _unicodeKey;
+        private byte[] _wzKey;
+
+        private readonly WZVariant _version;
+
+        internal WZAES(WZVariant version) {
+            _version = version;
+            GenerateKeys(0x10000);
+        }
+
+        private void GenerateKeys(int length) {
+            _wzKey = GetWZKey(_version, length);
+            byte[] asciiKey = new byte[_wzKey.Length];
+            byte[] unicodeKey = new byte[_wzKey.Length];
+            byte[] asciiEncKey = new byte[_wzKey.Length];
+            byte[] unicodeEncKey = new byte[_wzKey.Length];
+            unchecked {
+                byte mask = 0xAA;
+                for (int i = 0; i < _wzKey.Length; ++i, ++mask) {
+                    asciiKey[i] = mask;
+                    asciiEncKey[i] = (byte) (_wzKey[i] ^ mask);
+                }
+                ushort umask = 0xAAAA;
+                for (int i = 0; i < _wzKey.Length/2; i += 2, ++umask) {
+                    unicodeKey[i] = (byte) (umask & 0xFF);
+                    unicodeKey[i + 1] = (byte) ((umask & 0xFF00) >> 8);
+                    unicodeEncKey[i] = (byte) (_wzKey[i] ^ unicodeKey[i]);
+                    unicodeEncKey[i + 1] = (byte) (_wzKey[i + 1] ^ unicodeKey[i + 1]);
+                }
+            }
+            _asciiKey = asciiKey;
+            _unicodeKey = unicodeKey;
+            _asciiEncKey = asciiEncKey;
+            _unicodeEncKey = unicodeEncKey;
+        }
+
+        internal string DecryptASCIIString(byte[] asciiBytes, bool encrypted = true) {
+            CheckKeyLength(asciiBytes.Length);
+            return Encoding.ASCII.GetString(DecryptData(asciiBytes, encrypted ? _asciiEncKey : _asciiKey));
+        }
+
+        internal string DecryptUnicodeString(byte[] ushortChars, bool encrypted = true) {
+            CheckKeyLength(ushortChars.Length);
+            return Encoding.Unicode.GetString(DecryptData(ushortChars, encrypted ? _unicodeEncKey : _unicodeKey));
+        }
+
+        internal byte[] DecryptBytes(byte[] bytes) {
+            CheckKeyLength(bytes.Length);
+            return DecryptData(bytes, _wzKey);
+        }
+
+        private void CheckKeyLength(int length) {
+            if (_wzKey.Length < length) {
+                GenerateKeys(length);
+            }
+        }
+
         internal const uint OffsetKey = 0x581C3F6D;
 
         private static readonly byte[] AESKey = {
@@ -52,54 +112,27 @@ namespace reWZ {
             0xB9, 0x7D, 0x63, 0xE9
         };
 
-        private readonly byte[] _asciiEncKey;
-        private readonly byte[] _asciiKey;
-        private readonly byte[] _unicodeEncKey;
-        private readonly byte[] _unicodeKey;
-        private readonly byte[] _wzKey;
-
-        internal WZAES(WZVariant version) {
-            _wzKey = GetWZKey(version);
-            _asciiKey = new byte[_wzKey.Length];
-            _unicodeKey = new byte[_wzKey.Length];
-            _asciiEncKey = new byte[_wzKey.Length];
-            _unicodeEncKey = new byte[_wzKey.Length];
-            unchecked {
-                byte mask = 0xAA;
-                for (int i = 0; i < _wzKey.Length; ++i, ++mask) {
-                    _asciiKey[i] = mask;
-                    _asciiEncKey[i] = (byte) (_wzKey[i] ^ mask);
-                }
-                ushort umask = 0xAAAA;
-                for (int i = 0; i < _wzKey.Length/2; i += 2, ++umask) {
-                    _unicodeKey[i] = (byte) (umask & 0xFF);
-                    _unicodeKey[i + 1] = (byte) ((umask & 0xFF00) >> 8);
-                    _unicodeEncKey[i] = (byte) (_wzKey[i] ^ _unicodeKey[i]);
-                    _unicodeEncKey[i + 1] = (byte) (_wzKey[i + 1] ^ _unicodeKey[i + 1]);
-                }
-            }
-        }
-
-        private static byte[] GetWZKey(WZVariant version) {
+        private static byte[] GetWZKey(WZVariant version, int length) {
+            length = (length & ~15) + ((length & 15) > 0 ? 16 : 0);
             switch ((int) version) {
                 case 0:
-                    return GenerateKey(KMSIV, AESKey);
+                    return GenerateKey(KMSIV, AESKey, length);
                 case 1:
-                    return GenerateKey(GMSIV, AESKey);
+                    return GenerateKey(GMSIV, AESKey, length);
                 case 2:
-                    return new byte[0x10000];
+                    return new byte[length];
                 default:
                     throw new ArgumentException("Invalid WZ variant passed.", nameof(version));
             }
         }
 
-        private static byte[] GenerateKey(byte[] iv, byte[] aesKey) {
-            using (MemoryStream memStream = new MemoryStream(0x10000)) {
+        private static byte[] GenerateKey(byte[] iv, byte[] aesKey, int length) {
+            using (MemoryStream memStream = new MemoryStream(length)) {
                 using (AesManaged aem = new AesManaged {KeySize = 256, Key = aesKey, Mode = CipherMode.CBC, IV = iv}) {
                     using (
                         CryptoStream cStream = new CryptoStream(memStream, aem.CreateEncryptor(), CryptoStreamMode.Write)
                         ) {
-                        cStream.Write(new byte[0x10000], 0, 0x10000);
+                        cStream.Write(new byte[length], 0, length);
                         cStream.Flush();
                         return memStream.ToArray();
                     }
@@ -107,23 +140,9 @@ namespace reWZ {
             }
         }
 
-        internal string DecryptASCIIString(byte[] asciiBytes, bool encrypted = true) {
-            return Encoding.ASCII.GetString(DecryptData(asciiBytes, encrypted ? _asciiEncKey : _asciiKey));
-        }
-
-        internal string DecryptUnicodeString(byte[] ushortChars, bool encrypted = true) {
-            return Encoding.Unicode.GetString(DecryptData(ushortChars, encrypted ? _unicodeEncKey : _unicodeKey));
-        }
-
-        internal byte[] DecryptBytes(byte[] bytes) {
-            return DecryptData(bytes, _wzKey);
-        }
-
         private static unsafe byte[] DecryptData(byte[] data, byte[] key) {
-            // TODO: generate more bytes on demand
             if (data.Length > key.Length) {
-                throw new NotSupportedException(
-                    $"Cannot decrypt data longer than {key.Length} characters. Please report this!");
+                throw new InvalidOperationException("data.Length > key.Length; not supposed to happen, please report this to reWZ");
             }
 
             fixed (byte* c = data, k = key) {

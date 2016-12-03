@@ -218,7 +218,11 @@ namespace reWZ {
                 _r.Seek(offset);
                 _r.VersionHash = vHash;
                 try {
-                    _r.Seek(_r.ReadWZOffset(_fstart));
+                    uint off = _r.ReadWZOffset(_fstart);
+                    if (off + 1 > _r.Length) {
+                        continue;
+                    }
+                    _r.Seek(off);
                     if (_r.PeekFor(() => _r.ReadWZStringBlock(true)) != "Property" &&
                         _r.PeekFor(() => _r.ReadWZStringBlock(false)) != "Property") {
                         continue;

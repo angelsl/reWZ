@@ -92,19 +92,28 @@ namespace reWZ {
         /// <param name="encrypted"> Whether the string is encrypted. </param>
         /// <returns> The read string. </returns>
         internal string ReadWZString(bool encrypted = true) {
+            if (Position + 1 > Length) {
+                throw new WZException("WZ string offset out of bounds");
+            }
             int length = ReadSByte();
             if (length == 0) {
                 return "";
             }
             if (length > 0) {
-                length = length == 127 ? ReadInt32() : length;
+                length = length == 127 ? ReadInt32WithinBounds() : length;
                 if (length == 0) {
                     return "";
+                }
+                if (Position + length*2 > Length) {
+                    throw new WZException("Not enough bytes to read WZ string");
                 }
                 byte[] rbytes = ReadBytes(length*2);
                 return _aes.DecryptUnicodeString(rbytes, encrypted);
             } // !(length >= 0), i think we can assume length < 0, but the compiler can't seem to see that
-            length = length == -128 ? ReadInt32() : -length;
+            length = length == -128 ? ReadInt32WithinBounds() : -length;
+            if (Position + length > Length) {
+                throw new WZException("Not enough bytes to read WZ string");
+            }
             return length == 0 ? "" : _aes.DecryptASCIIString(ReadBytes(length), encrypted);
         }
 
@@ -132,7 +141,7 @@ namespace reWZ {
                     return ReadWZString(encrypted);
                 case 1:
                 case 0x1B:
-                    return ReadWZStringAtOffset(ReadInt32(), encrypted);
+                    return ReadWZStringAtOffset(ReadInt32WithinBounds(), encrypted);
                 default:
                     return WZUtil.Die<string>("Unknown string type in string block!");
             }
@@ -171,6 +180,13 @@ namespace reWZ {
         internal long ReadWZLong() {
             sbyte s = ReadSByte();
             return s == -128 ? ReadInt64() : s;
+        }
+
+        private int ReadInt32WithinBounds() {
+            if (Position + 4 > Length) {
+                throw new WZException("Not enough bytes to read int32");
+            }
+            return ReadInt32();
         }
 
         internal uint ReadWZOffset(uint fstart) {
